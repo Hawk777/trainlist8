@@ -336,6 +336,17 @@ LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lPara
 					case ID_MAIN_MENU_FILE_EXIT:
 						handleClose();
 						break;
+
+					case ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP:
+					{
+						HMENU menu = GetMenu(*this);
+						MENUITEMINFOW info = {.cbSize = sizeof(info), .fMask = MIIM_STATE};
+						winrt::check_bool(GetMenuItemInfoW(menu, ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP, FALSE, &info));
+						info.fState ^= MFS_CHECKED;
+						winrt::check_bool(SetMenuItemInfoW(menu, ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP, FALSE, &info));
+						SetWindowPos(*this, (info.fState & MFS_CHECKED) ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+					}
+					break;
 				}
 			}
 			return 0;

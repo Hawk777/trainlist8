@@ -30,6 +30,10 @@ BEGIN
     BEGIN
         MENUITEM "E&xit",                       ID_MAIN_MENU_FILE_EXIT
     END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Always on Top",              ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP
+    END
 END
 
 
