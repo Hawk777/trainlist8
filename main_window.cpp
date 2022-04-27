@@ -12,6 +12,7 @@
 #include "main_window.h"
 #include "resource.h"
 #include "soap.h"
+#include "territory.h"
 #include "util.h"
 
 using trainlist8::MainWindow;
@@ -71,6 +72,36 @@ const NUMBERFMTW &integerFormat() {
 		.NegativeOrder = getLocaleInteger(LOCALE_INEGNUMBER),
 	};
 	return ret;
+}
+
+// Formats an integer according to the current locale into a buffer.
+template<std::integral T>
+void formatInteger(T value, std::wstring &buffer) {
+	// Write the value, in locale-agnostic raw format, to a multibyte buffer.
+	static constexpr size_t bufferSize = std::numeric_limits<T>::digits10 + 3;
+	std::array<char, bufferSize> mbBuffer;
+	std::to_chars_result result = std::to_chars(mbBuffer.data(), mbBuffer.data() + mbBuffer.size(), value);
+	size_t mbLen = result.ptr - mbBuffer.data();
+
+	// Convert the multibyte string to a wide string.
+	std::array<wchar_t, bufferSize> wideBuffer;
+	int wideWritten = MultiByteToWideChar(CP_ACP, 0, mbBuffer.data(), mbLen, wideBuffer.data(), wideBuffer.size());
+	if(!wideWritten) {
+		winrt::throw_last_error();
+	}
+	wideBuffer[wideWritten] = '\0';
+
+	// Add proper number formatting.
+	int needed = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &integerFormat(), nullptr, 0);
+	if(!needed) {
+		winrt::throw_last_error();
+	}
+	buffer.resize(needed);
+	int written = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &integerFormat(), buffer.data(), buffer.size());
+	if(!written) {
+		winrt::throw_last_error();
+	}
+	buffer.resize(written);
 }
 
 // Metadata about a column of the list.
@@ -182,31 +213,7 @@ class IntegerColumn final : public Column {
 	}
 
 	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &scratch) const {
-		// Write the value, in locale-agnostic raw format, to a multibyte buffer.
-		static constexpr size_t bufferSize = std::numeric_limits<T>::digits10 + 3;
-		std::array<char, bufferSize> mbBuffer;
-		std::to_chars_result result = std::to_chars(mbBuffer.data(), mbBuffer.data() + mbBuffer.size(), train.*member);
-		size_t mbLen = result.ptr - mbBuffer.data();
-
-		// Convert the multibyte string to a wide string.
-		std::array<wchar_t, bufferSize> wideBuffer;
-		int wideWritten = MultiByteToWideChar(CP_ACP, 0, mbBuffer.data(), mbLen, wideBuffer.data(), wideBuffer.size());
-		if(!wideWritten) {
-			winrt::throw_last_error();
-		}
-		wideBuffer[wideWritten] = '\0';
-
-		// Add proper number formatting.
-		int needed = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &integerFormat(), nullptr, 0);
-		if(!needed) {
-			winrt::throw_last_error();
-		}
-		scratch.resize(needed);
-		int written = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &integerFormat(), scratch.data(), scratch.size());
-		if(!written) {
-			winrt::throw_last_error();
-		}
-		scratch.resize(written);
+		formatInteger(train.*member, scratch);
 		return scratch;
 	}
 
@@ -233,6 +240,85 @@ constexpr const IntegerColumn<uint32_t> weightColumn(IDS_MAIN_COLUMN_WEIGHT, &Ma
 // The train speed column.
 constexpr const IntegerColumn<int, float> speedColumn(IDS_MAIN_COLUMN_SPEED, &MainWindow::TrainInfo::speed, &soap::TrainData::speed);
 
+// The territory column.
+class TerritoryColumn final : public Column {
+	public:
+	// The only instance of this object.
+	static const TerritoryColumn instance;
+
+	explicit constexpr TerritoryColumn() : Column(IDS_MAIN_COLUMN_TERRITORY) {
+	}
+
+	bool update(MainWindow::TrainInfo &dest, const soap::TrainData &source) const override {
+		std::optional<unsigned int> newValue;
+		if(source.block < 0) {
+			// A block number of −1 means the train is in an unsignalled location.
+			newValue = {};
+		} else {
+			// The first three digits of the block number are the territory; the rest are the block within the territory.
+			unsigned int territory = source.block;
+			while(territory > 1000) {
+				territory /= 10;
+			}
+			newValue = territory;
+		}
+		if(newValue != dest.territory) {
+			dest.territory = newValue;
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &scratch) const override {
+		if(train.territory) {
+			const std::wstring *n = territory::nameByID(*train.territory);
+			if(n) {
+				// The territory has a known name.
+				return *n;
+			} else {
+				// The territory does not have a known name. Render it as the integer instead.
+				formatInteger(*train.territory, scratch);
+				return scratch;
+			}
+		} else {
+			// The train is in an unsignalled location.
+			scratch.clear();
+			return scratch;
+		}
+	}
+
+	int compare(const MainWindow::TrainInfo &x, const MainWindow::TrainInfo &y) const override {
+		if(x.territory && y.territory) {
+			// Both are in signalled locations.
+			const std::wstring *xn = territory::nameByID(*x.territory), *yn = territory::nameByID(*y.territory);
+			if(xn && yn) {
+				// Both have strings, so order by name.
+				return xn->compare(*yn);
+			} else if(!xn && !yn) {
+				// Neither has a string, so order by ID.
+				return *x.territory < *y.territory ? -1 : *x.territory > *y.territory ? 1 : 0;
+			} else if(xn) {
+				// X has a string and Y does not, so order X first.
+				return -1;
+			} else {
+				// Y has a string and X does not, so order Y first.
+				return 1;
+			}
+		} else if(!x.territory && !y.territory) {
+			// Both are in unsignalled locations. They are incomparable.
+			return 0;
+		} else if(x.territory) {
+			// X is in an unsignalled location. It comes after Y.
+			return 1;
+		} else {
+			// Y is in an unsignalled location. It comes after X.
+			return -1;
+		}
+	}
+};
+constinit const TerritoryColumn TerritoryColumn::instance;
+
 // The columns.
 static constinit const std::array columnMetadata{
 	static_cast<const Column *>(&LeadUnitColumn::instance),
@@ -240,6 +326,7 @@ static constinit const std::array columnMetadata{
 	static_cast<const Column *>(&lengthColumn),
 	static_cast<const Column *>(&weightColumn),
 	static_cast<const Column *>(&speedColumn),
+	static_cast<const Column *>(&TerritoryColumn::instance),
 };
 
 // The age threshold above which trains are removed.

@@ -3,6 +3,7 @@
 #include "main_window.h"
 #include "message_pump.h"
 #include "resource.h"
+#include "territory.h"
 #include "util.h"
 #include "welcome_window.h"
 
@@ -35,6 +36,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, wchar_t *, int showCommand) {
 		winrt::check_hresult(CreateDispatcherQueueController(dqcOptions, &raw));
 		return winrt::Windows::System::DispatcherQueueController(raw, winrt::take_ownership_from_abi);
 	}();
+
+	// Load territory name strings.
+	trainlist8::territory::init(instance);
 
 	// Initialize common controls.
 	{

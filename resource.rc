@@ -71,6 +71,18 @@ BEGIN
     IDS_MAIN_COLUMN_LENGTH  "Length (feet)"
     IDS_MAIN_COLUMN_WEIGHT  "Weight (tons)"
     IDS_MAIN_COLUMN_SPEED   "Speed (mph)"
+    IDS_MAIN_COLUMN_TERRITORY "Territory"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_TERRITORY_BAKERSFIELD "Bakersfield"
+    IDS_TERRITORY_MOJAVE    "Mojave"
+    IDS_TERRITORY_BARSTOW   "Barstow/Yermo"
+    IDS_TERRITORY_NEEDLES   "Needles"
+    IDS_TERRITORY_SELIGMAN  "Seligman"
+    IDS_TERRITORY_CAJON     "Cajon"
+    IDS_TERRITORY_SBD       "San Bernardino"
 END
 
 #endif    // English (Neutral) resources

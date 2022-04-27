@@ -3,6 +3,7 @@
 #if !defined(MAIN_WINDOW_H)
 #define MAIN_WINDOW_H
 
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include "connection.h"
@@ -36,6 +37,9 @@ class MainWindow final : public Window {
 
 		// The most recent train speed.
 		int speed;
+
+		// The most recent territory, or an empty optional if the train is in an unsignalled location.
+		std::optional<unsigned int> territory;
 	};
 
 	static const wchar_t windowClass[];

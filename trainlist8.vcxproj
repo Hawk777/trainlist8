@@ -113,6 +113,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="soap.cpp" />
+    <ClCompile Include="territory.cpp" />
     <ClCompile Include="util.cpp" />
     <ClCompile Include="welcome_window.cpp" />
     <ClCompile Include="window.cpp" />
@@ -124,6 +125,7 @@
     <ClInclude Include="message_pump.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="soap.h" />
+    <ClInclude Include="territory.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="welcome_window.h" />
     <ClInclude Include="window.h" />

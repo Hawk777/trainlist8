@@ -187,7 +187,7 @@ void WelcomeWindow::connect() {
 				{
 					// Callables pointed to by std::function must be copyable. Connection is not copyable, nor is unique_ptr<Connection>.
 					std::shared_ptr<Connection> connection = std::make_shared<Connection>(std::move(*this->connection));
-					HWND mainWindowHandle = trainlist8::Window::create(WS_EX_WINDOWEDGE, MainWindow::windowClass, trainlist8::util::loadString(instance(), IDS_APP_NAME).c_str(), WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_OVERLAPPED | WS_SIZEBOX | WS_SYSMENU, CW_USEDEFAULT, 0, 750, 500, nullptr, nullptr, instance(), [connection = std::move(connection), &pump = pump](HWND handle) mutable {
+					HWND mainWindowHandle = trainlist8::Window::create(WS_EX_WINDOWEDGE, MainWindow::windowClass, trainlist8::util::loadString(instance(), IDS_APP_NAME).c_str(), WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_OVERLAPPED | WS_SIZEBOX | WS_SYSMENU, CW_USEDEFAULT, 0, 1000, 500, nullptr, nullptr, instance(), [connection = std::move(connection), &pump = pump](HWND handle) mutable {
 						assert(connection.use_count() == 1);
 						return new trainlist8::MainWindow(handle, pump, std::forward<Connection &&>(*connection));
 					});

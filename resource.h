@@ -22,6 +22,15 @@
 #define IDS_MAIN_COLUMN_LENGTH          405
 #define IDS_MAIN_COLUMN_WEIGHT          406
 #define IDS_MAIN_COLUMN_SPEED           407
+#define IDS_MAIN_COLUMN_TERRITORY       408
+#define IDS_TERRITORY_BAKERSFIELD       800
+#define IDS_TERRITORY_MOJAVE            801
+#define IDS_TERRITORY_BARSTOW           802
+#define IDS_TERRITORY_NEEDLES           803
+#define IDS_TERRITORY_SELIGMAN          804
+#define IDS_TERRITORY_CAJON             805
+#define IDS_TERRITORY_SBD               806
+#define IDS_TERRITORY_ALHAMBRA          807
 #define ID_FILE_EXIT                    40001
 #define ID_MAIN_MENU_FILE_EXIT          40002
 #define ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP 40003
