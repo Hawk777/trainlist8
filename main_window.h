@@ -57,6 +57,7 @@ class MainWindow final : public Window {
 	Connection connection;
 	winrt::Windows::Foundation::IAsyncAction receiveMessagesAction;
 
+	void handleClose();
 	static ListViewCompareCallback rawCompareCallback;
 	static int compareTrains(const TrainInfo &x, const TrainInfo &y, unsigned int column, int sortOrder);
 	winrt::Windows::Foundation::IAsyncAction receiveMessages();

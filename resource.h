@@ -6,6 +6,7 @@
 #define IDS_UNKNOWN_ERROR               1
 #define IDS_CANCEL                      2
 #define IDS_ERROR                       104
+#define IDR_MAIN_MENU                   112
 #define IDS_WELCOME_LABEL               200
 #define IDS_WELCOME_LOCALHOST           201
 #define IDS_WELCOME_OTHER_COMPUTER      202
@@ -21,14 +22,16 @@
 #define IDS_MAIN_COLUMN_LENGTH          405
 #define IDS_MAIN_COLUMN_WEIGHT          406
 #define IDS_MAIN_COLUMN_SPEED           407
+#define ID_FILE_EXIT                    40001
+#define ID_MAIN_MENU_FILE_EXIT          40002
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        111
-#define _APS_NEXT_COMMAND_VALUE         40001
+#define _APS_NEXT_RESOURCE_VALUE        113
+#define _APS_NEXT_COMMAND_VALUE         40003
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

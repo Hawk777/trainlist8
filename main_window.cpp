@@ -326,9 +326,17 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lParam) {
 	switch(message) {
 		case WM_CLOSE:
-			if(!closing) {
-				closing = true;
-				receiveMessagesAction.Cancel();
+			handleClose();
+			return 0;
+
+		case WM_COMMAND:
+			if(lParam == 0 && (HIWORD(wParam) == 0 || HIWORD(wParam) == 1)) {
+				// Menu or accelerator.
+				switch(LOWORD(wParam)) {
+					case ID_MAIN_MENU_FILE_EXIT:
+						handleClose();
+						break;
+				}
 			}
 			return 0;
 
@@ -384,6 +392,13 @@ LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lPara
 
 	}
 	return DefWindowProc(*this, message, wParam, lParam);
+}
+
+void MainWindow::handleClose() {
+	if(!closing) {
+		closing = true;
+		receiveMessagesAction.Cancel();
+	}
 }
 
 int WINAPI MainWindow::rawCompareCallback(LPARAM param1, LPARAM param2, LPARAM extra) {
