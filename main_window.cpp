@@ -76,7 +76,7 @@ const NUMBERFMTW &integerFormat() {
 // Metadata about a column of the list.
 class Column {
 	public:
-	// Returns the ID of the string table entry that holds the title of this column.
+	// The ID of the string table entry that holds the title of this column.
 	unsigned int stringID;
 
 	// Updates a train object to hold a new value from a SOAP update message, returning whether or not the value changed.
