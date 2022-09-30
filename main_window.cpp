@@ -250,18 +250,7 @@ class TerritoryColumn final : public Column {
 	}
 
 	bool update(MainWindow::TrainInfo &dest, const soap::TrainData &source) const override {
-		std::optional<unsigned int> newValue;
-		if(source.block < 0) {
-			// A block number of −1 means the train is in an unsignalled location.
-			newValue = {};
-		} else {
-			// The first three digits of the block number are the territory; the rest are the block within the territory.
-			unsigned int territory = source.block;
-			while(territory > 1000) {
-				territory /= 10;
-			}
-			newValue = territory;
-		}
+		std::optional<unsigned int> newValue = territory::idByBlock(source.block);
 		if(newValue != dest.territory) {
 			dest.territory = newValue;
 			return true;

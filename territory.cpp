@@ -31,6 +31,21 @@ void trainlist8::territory::init(HINSTANCE instance) {
 	}
 }
 
+// Returns the ID of a territory for a given block number.
+std::optional<unsigned int> trainlist8::territory::idByBlock(int32_t block) {
+	if(block < 0) {
+		// A block number of −1 means the train is in an unsignalled location.
+		return {};
+	} else {
+		// The first three digits of the block number are the territory; the rest are the block within the territory.
+		unsigned int territory = block;
+		while(territory > 1000) {
+			territory /= 10;
+		}
+		return territory;
+	}
+}
+
 // Returns the ID of a territory in a given position.
 unsigned int trainlist8::territory::idByIndex(size_t index) {
 	return resourceIDs[index].first;
