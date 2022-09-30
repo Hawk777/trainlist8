@@ -3,10 +3,12 @@
 #if !defined(MAIN_WINDOW_H)
 #define MAIN_WINDOW_H
 
+#include <bitset>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include "connection.h"
+#include "territory.h"
 #include "window.h"
 
 namespace trainlist8 {
@@ -60,6 +62,8 @@ class MainWindow final : public Window {
 	bool closing;
 	Connection connection;
 	winrt::Windows::Foundation::IAsyncAction receiveMessagesAction;
+	std::bitset<territory::count> enabledTerritories;
+	bool enabledUnknownTerritories;
 
 	void handleClose();
 	static ListViewCompareCallback rawCompareCallback;

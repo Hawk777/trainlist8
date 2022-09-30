@@ -12,7 +12,6 @@
 #include "main_window.h"
 #include "resource.h"
 #include "soap.h"
-#include "territory.h"
 #include "util.h"
 
 using trainlist8::MainWindow;
@@ -338,7 +337,9 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 	maxTextSize(0),
 	closing(false),
 	connection(std::move(connection)),
-	receiveMessagesAction(receiveMessages()) {
+	receiveMessagesAction(receiveMessages()),
+	enabledTerritories([]() {decltype(enabledTerritories) b; b.set(); return b; }()),
+	enabledUnknownTerritories(true) {
 	// Enable menus to report clicks via WM_MENUCOMMAND instead of WM_COMMAND.
 	HMENU bar = winrt::check_pointer(GetMenu(*this));
 	{
@@ -346,6 +347,58 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 		winrt::check_bool(GetMenuInfo(bar, &info));
 		info.dwStyle |= MNS_NOTIFYBYPOS;
 		winrt::check_bool(SetMenuInfo(bar, &info));
+	}
+
+	// Populate the View/Territories menu.
+	{
+		// Find the View/Territories menu. It doesn't have an ID because submenus can't have IDs, so we must search for it by knowing that it contains the Unknown item, which does have an ID.
+		auto findSubMenuContainingID = [](HMENU parent, unsigned int id) -> HMENU {
+			int count = GetMenuItemCount(parent);
+			if(count < 0) {
+				winrt::throw_last_error();
+			}
+			for(int i = 0; i != count; ++i) {
+				MENUITEMINFOW info{.cbSize = sizeof(info), .fMask = MIIM_SUBMENU};
+				winrt::check_bool(GetMenuItemInfoW(parent, i, TRUE, &info));
+				HMENU candidate = info.hSubMenu;
+				if(candidate) {
+					info.fMask = MIIM_STATE;
+					if(GetMenuItemInfoW(candidate, id, FALSE, &info)) {
+						return candidate;
+					} else if(GetLastError() == ERROR_MENU_ITEM_NOT_FOUND) {
+						// Go on to the next one; this is not a fatal error.
+					} else {
+						winrt::throw_last_error();
+					}
+				}
+			}
+			return nullptr;
+		};
+		HMENU viewMenu = winrt::check_pointer(findSubMenuContainingID(bar, ID_MAIN_MENU_VIEW_TERRITORIES_UNKNOWN));
+		HMENU territoriesMenu = winrt::check_pointer(findSubMenuContainingID(viewMenu, ID_MAIN_MENU_VIEW_TERRITORIES_UNKNOWN));
+
+		// Build the list of strings that will be added to it, which is the territory names but in sorted order, and add them. Give each menu item a dwItemData that is the territory ID. Insert these items before the Unknown item.
+		std::array<std::pair<const std::wstring *, unsigned int>, territory::count> sortedStrings;
+		for(size_t i = 0; i != sortedStrings.size(); ++i) {
+			sortedStrings[i].first = territory::nameByIndex(i);
+			sortedStrings[i].second = territory::idByIndex(i);
+		}
+		std::sort(sortedStrings.begin(), sortedStrings.end(),
+			[](const std::pair<const std::wstring *, unsigned int> &x, const std::pair<const std::wstring *, unsigned int> &y) -> bool {
+				return *x.first < *y.first;
+			});
+		for(size_t i = 0; i != sortedStrings.size(); ++i) {
+			MENUITEMINFOW info{
+				.cbSize = sizeof(info),
+				.fMask = MIIM_DATA | MIIM_FTYPE | MIIM_ID | MIIM_STATE | MIIM_STRING,
+				.fType = MFT_STRING,
+				.fState = MFS_CHECKED,
+				.wID = ID_MAIN_MENU_VIEW_TERRITORIES_SPECIFIC,
+				.dwItemData = sortedStrings[i].second,
+				.dwTypeData = const_cast<wchar_t *>(sortedStrings[i].first->c_str()),
+			};
+			winrt::check_bool(InsertMenuItemW(territoriesMenu, i, TRUE, &info));
+		}
 	}
 
 	// Register for notification of completion of the receive-messages action.
@@ -444,6 +497,25 @@ LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lPara
 					info.fState ^= MFS_CHECKED;
 					winrt::check_bool(SetMenuItemInfoW(menu, wParam, TRUE, &info));
 					SetWindowPos(*this, (info.fState & MFS_CHECKED) ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+				}
+				break;
+
+				case ID_MAIN_MENU_VIEW_TERRITORIES_SPECIFIC:
+				{
+					info.fMask = MIIM_STATE;
+					info.fState ^= MFS_CHECKED;
+					winrt::check_bool(SetMenuItemInfoW(menu, wParam, TRUE, &info));
+					size_t territoryIndex = *territory::indexByID(info.dwItemData);
+					enabledTerritories.set(territoryIndex, info.fState & MFS_CHECKED);
+				}
+				break;
+
+				case ID_MAIN_MENU_VIEW_TERRITORIES_UNKNOWN:
+				{
+					info.fMask = MIIM_STATE;
+					info.fState ^= MFS_CHECKED;
+					winrt::check_bool(SetMenuItemInfoW(menu, wParam, TRUE, &info));
+					enabledUnknownTerritories = info.fState & MFS_CHECKED;
 				}
 				break;
 			}
@@ -574,65 +646,77 @@ winrt::Windows::Foundation::IAsyncAction MainWindow::receiveMessages() {
 			// Move to the UI thread to update UI controls and modify the trains map.
 			co_await uiThread;
 
-			// Add an element to the trains map.
-			auto [element, added] = trains.emplace(data->id, TrainInfo{});
+			// Check whether the train is in an enabled territory.
+			std::optional<unsigned int> territoryID = territory::idByBlock(data->block);
+			std::optional<size_t> territoryIndex = territoryID ? territory::indexByID(*territoryID) : std::nullopt;
+			bool inEnabledTerritory = territoryIndex ? enabledTerritories[*territoryIndex] : enabledUnknownTerritories;
+			if(inEnabledTerritory) {
+				// Add an element to the trains map.
+				auto [element, added] = trains.emplace(data->id, TrainInfo{});
 
-			// Zero the age of the train, because we just saw an update so it obviously still exists.
-			element->second.age = 0;
+				// Zero the age of the train, because we just saw an update so it obviously still exists.
+				element->second.age = 0;
 
-			// Fill the data provided by Run 8, keeping track of which fields changed.
-			std::bitset<columnMetadata.size()> columnsChanged;
-			for(size_t i = 0; i != columnMetadata.size(); ++i) {
-				columnsChanged[i] = columnMetadata[i]->update(element->second, *data);
-			}
+				// Fill the data provided by Run 8, keeping track of which fields changed.
+				std::bitset<columnMetadata.size()> columnsChanged;
+				for(size_t i = 0; i != columnMetadata.size(); ++i) {
+					columnsChanged[i] = columnMetadata[i]->update(element->second, *data);
+				}
 
-			// Calculate where in the list the train should appear.
-			int oldIndex = added ? -1 : ListView_MapIDToIndex(trainsView, element->second.listViewID);
-			int newIndex;
-			if(added || columnsChanged[sortColumn]) {
-				// This is a new train or the value in the column by which the list is sorted has changed. A new position needs to be calculated.
-				using std::begin;
-				auto indexRange = std::ranges::views::iota(0, ListView_GetItemCount(trainsView));
-				newIndex = static_cast<int>(std::ranges::lower_bound(
-					indexRange,
-					element->second,
-					[this](const TrainInfo &candidate, const TrainInfo &newTrain) -> bool {
-						return compareTrains(candidate, newTrain, sortColumn, sortOrder) < 0;
-					},
-					[this](const int &candidateIndex) -> const TrainInfo & {
-						LVITEMW candidateItem = {.mask = LVIF_PARAM, .iItem = candidateIndex};
-						ListView_GetItem(trainsView, &candidateItem);
-						return *reinterpret_cast<const TrainInfo *>(candidateItem.lParam);
-					}) - begin(indexRange));
-			} else {
-				// This is an existing train whose sorting key has not changed. It will not move.
-				newIndex = oldIndex;
-			}
+				// Calculate where in the list the train should appear.
+				int oldIndex = added ? -1 : ListView_MapIDToIndex(trainsView, element->second.listViewID);
+				int newIndex;
+				if(added || columnsChanged[sortColumn]) {
+					// This is a new train or the value in the column by which the list is sorted has changed. A new position needs to be calculated.
+					using std::begin;
+					auto indexRange = std::ranges::views::iota(0, ListView_GetItemCount(trainsView));
+					newIndex = static_cast<int>(std::ranges::lower_bound(
+						indexRange,
+						element->second,
+						[this](const TrainInfo &candidate, const TrainInfo &newTrain) -> bool {
+							return compareTrains(candidate, newTrain, sortColumn, sortOrder) < 0;
+						},
+						[this](const int &candidateIndex) -> const TrainInfo & {
+							LVITEMW candidateItem = {.mask = LVIF_PARAM, .iItem = candidateIndex};
+							ListView_GetItem(trainsView, &candidateItem);
+							return *reinterpret_cast<const TrainInfo *>(candidateItem.lParam);
+						}) - begin(indexRange));
+				} else {
+					// This is an existing train whose sorting key has not changed. It will not move.
+					newIndex = oldIndex;
+				}
 
-			if(newIndex != oldIndex) {
-				// This is a new train, or else the value of the column used for sorting has changed such that it must be repositioned in the list. Insert a row in the proper place, deleting the old row if applicable.
-				if(oldIndex >= 0) {
-					ListView_DeleteItem(trainsView, oldIndex);
-					if(newIndex > oldIndex) {
-						--newIndex;
+				if(newIndex != oldIndex) {
+					// This is a new train, or else the value of the column used for sorting has changed such that it must be repositioned in the list. Insert a row in the proper place, deleting the old row if applicable.
+					if(oldIndex >= 0) {
+						ListView_DeleteItem(trainsView, oldIndex);
+						if(newIndex > oldIndex) {
+							--newIndex;
+						}
+					}
+					LVITEMW item = {
+						.mask = LVIF_PARAM,
+						.iItem = newIndex,
+						.lParam = reinterpret_cast<LPARAM>(&element->second),
+					};
+					ListView_InsertItem(trainsView, &item);
+					element->second.listViewID = ListView_MapIndexToID(trainsView, newIndex);
+
+					// All columns need to be updated.
+					columnsChanged.set();
+				}
+
+				// Update all the columns that changed.
+				for(size_t i = 0; i != columnMetadata.size(); ++i) {
+					if(columnsChanged[i]) {
+						ListView_SetItemText(trainsView, newIndex, i, LPSTR_TEXTCALLBACK);
 					}
 				}
-				LVITEMW item = {
-					.mask = LVIF_PARAM,
-					.iItem = newIndex,
-					.lParam = reinterpret_cast<LPARAM>(&element->second),
-				};
-				ListView_InsertItem(trainsView, &item);
-				element->second.listViewID = ListView_MapIndexToID(trainsView, newIndex);
-
-				// All columns need to be updated.
-				columnsChanged.set();
-			}
-
-			// Update all the columns that changed.
-			for(size_t i = 0; i != columnMetadata.size(); ++i) {
-				if(columnsChanged[i]) {
-					ListView_SetItemText(trainsView, newIndex, i, LPSTR_TEXTCALLBACK);
+			} else {
+				// See if we already have a record of this train, from when it was in a different territory or when this territory was previously enabled.
+				if(auto i = trains.find(data->id); i != trains.end()) {
+					ListView_DeleteItem(trainsView, ListView_MapIDToIndex(trainsView, i->second.listViewID));
+					trains.erase(i);
 				}
 			}
 		}

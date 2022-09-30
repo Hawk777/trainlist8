@@ -33,6 +33,10 @@ BEGIN
     POPUP "&View"
     BEGIN
         MENUITEM "&Always on Top",              ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP
+        POPUP "&Territories"
+        BEGIN
+            MENUITEM "Unknown",                     ID_MAIN_MENU_VIEW_TERRITORIES_UNKNOWN, CHECKED
+        END
     END
 END
 
