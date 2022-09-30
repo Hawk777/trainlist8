@@ -350,6 +350,15 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 	closing(false),
 	connection(std::move(connection)),
 	receiveMessagesAction(receiveMessages()) {
+	// Enable menus to report clicks via WM_MENUCOMMAND instead of WM_COMMAND.
+	HMENU bar = winrt::check_pointer(GetMenu(*this));
+	{
+		MENUINFO info{.cbSize = sizeof(info), .fMask = MIM_STYLE};
+		winrt::check_bool(GetMenuInfo(bar, &info));
+		info.dwStyle |= MNS_NOTIFYBYPOS;
+		winrt::check_bool(SetMenuInfo(bar, &info));
+	}
+
 	// Register for notification of completion of the receive-messages action.
 	auto uiThread = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
 	receiveMessagesAction.Completed([this, uiThread](const winrt::Windows::Foundation::IAsyncAction &action, winrt::Windows::Foundation::AsyncStatus status) {
@@ -416,28 +425,6 @@ LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lPara
 			handleClose();
 			return 0;
 
-		case WM_COMMAND:
-			if(lParam == 0 && (HIWORD(wParam) == 0 || HIWORD(wParam) == 1)) {
-				// Menu or accelerator.
-				switch(LOWORD(wParam)) {
-					case ID_MAIN_MENU_FILE_EXIT:
-						handleClose();
-						break;
-
-					case ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP:
-					{
-						HMENU menu = GetMenu(*this);
-						MENUITEMINFOW info = {.cbSize = sizeof(info), .fMask = MIIM_STATE};
-						winrt::check_bool(GetMenuItemInfoW(menu, ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP, FALSE, &info));
-						info.fState ^= MFS_CHECKED;
-						winrt::check_bool(SetMenuItemInfoW(menu, ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP, FALSE, &info));
-						SetWindowPos(*this, (info.fState & MFS_CHECKED) ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-					}
-					break;
-				}
-			}
-			return 0;
-
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
@@ -447,6 +434,30 @@ LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lPara
 			const RECT &rect = *reinterpret_cast<const RECT *>(lParam);
 			SetWindowPos(*this, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER);
 			updateLayoutAndFont();
+		}
+		return 0;
+
+		case WM_MENUCOMMAND:
+		{
+			HMENU menu = reinterpret_cast<HMENU>(lParam);
+			MENUITEMINFOW info{};
+			info.cbSize = sizeof(info);
+			info.fMask = MIIM_DATA | MIIM_ID | MIIM_STATE;
+			winrt::check_bool(GetMenuItemInfoW(menu, wParam, TRUE, &info));
+			switch(info.wID) {
+				case ID_MAIN_MENU_FILE_EXIT:
+					handleClose();
+					break;
+
+				case ID_MAIN_MENU_VIEW_ALWAYS_ON_TOP:
+				{
+					info.fMask = MIIM_STATE;
+					info.fState ^= MFS_CHECKED;
+					winrt::check_bool(SetMenuItemInfoW(menu, wParam, TRUE, &info));
+					SetWindowPos(*this, (info.fState & MFS_CHECKED) ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+				}
+				break;
+			}
 		}
 		return 0;
 
