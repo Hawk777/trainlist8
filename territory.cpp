@@ -31,14 +31,34 @@ void trainlist8::territory::init(HINSTANCE instance) {
 	}
 }
 
-// Finds the name of a territory, if known, or nullptr if not.
-const std::wstring *trainlist8::territory::nameByID(unsigned int territory) {
+// Returns the ID of a territory in a given position.
+unsigned int trainlist8::territory::idByIndex(size_t index) {
+	return resourceIDs[index].first;
+}
+
+// Returns the position of a territory with a given ID.
+std::optional<size_t> trainlist8::territory::indexByID(unsigned int territory) {
 	auto i = std::lower_bound(resourceIDs.cbegin(), resourceIDs.cend(), territory,
 		[](const std::pair<unsigned int, unsigned int> &candidate, unsigned int target) -> bool {
 			return candidate.first < target;
 		});
 	if(i != resourceIDs.cend() && i->first == territory) {
-		return strings[i - resourceIDs.cbegin()].get();
+		return {i - resourceIDs.cbegin()};
+	} else {
+		return {};
+	}
+}
+
+// Returns the name of a territory in a given position.
+const std::wstring *trainlist8::territory::nameByIndex(size_t index) {
+	return strings[index].get();
+}
+
+// Finds the name of a territory, if known, or nullptr if not.
+const std::wstring *trainlist8::territory::nameByID(unsigned int territory) {
+	std::optional<size_t> index = indexByID(territory);
+	if(index) {
+		return strings[*index].get();
 	} else {
 		return nullptr;
 	}
