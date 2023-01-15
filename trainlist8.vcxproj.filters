@@ -99,5 +99,8 @@
     <Image Include="trainlist8.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="driver-icons.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

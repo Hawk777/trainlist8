@@ -15,12 +15,22 @@ namespace trainlist8 {
 class MessagePump;
 extern "C" using ListViewCompareCallback = int WINAPI(LPARAM, LPARAM, LPARAM);
 
+namespace soap {
+enum class EngineerType : int32_t;
+}
+
 class MainWindow final : public Window {
 	public:
 	// Information about a train that is saved persistently and made available for display.
 	struct TrainInfo final {
 		// The Windows list view ID number.
 		unsigned int listViewID;
+
+		// The type of driver.
+		soap::EngineerType engineerType;
+
+		// The name of the driver, if a player.
+		std::wstring engineerName;
 
 		// How many simulation state messages have been received since the last update message for this train.
 		unsigned int age;
@@ -53,6 +63,7 @@ class MainWindow final : public Window {
 
 	private:
 	std::unordered_map<uint32_t, TrainInfo> trains;
+	std::unique_ptr<HIMAGELIST, util::ImageListDeleter> driverImageList;
 	std::unique_ptr<HFONT, util::FontDeleter> font;
 	HWND timeFrame, timeLabel, trainsView;
 	std::wstring getDispInfoBuffer;

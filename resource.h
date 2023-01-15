@@ -7,6 +7,7 @@
 #define IDS_CANCEL                      2
 #define IDS_ERROR                       104
 #define IDR_MAIN_MENU                   112
+#define IDB_DRIVER_ICONS                113
 #define IDS_WELCOME_LABEL               200
 #define IDS_WELCOME_LOCALHOST           201
 #define IDS_WELCOME_OTHER_COMPUTER      202
@@ -23,6 +24,7 @@
 #define IDS_MAIN_COLUMN_WEIGHT          406
 #define IDS_MAIN_COLUMN_SPEED           407
 #define IDS_MAIN_COLUMN_TERRITORY       408
+#define IDS_MAIN_COLUMN_CREW            410
 #define IDS_TERRITORY_BAKERSFIELD       800
 #define IDS_TERRITORY_MOJAVE            801
 #define IDS_TERRITORY_BARSTOW           802
@@ -43,7 +45,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        113
+#define _APS_NEXT_RESOURCE_VALUE        115
 #define _APS_NEXT_COMMAND_VALUE         40006
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101

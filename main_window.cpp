@@ -307,6 +307,49 @@ class TerritoryColumn final : public Column {
 };
 constinit const TerritoryColumn TerritoryColumn::instance;
 
+// The crew column.
+class CrewColumn final : public Column {
+	public:
+	// The only instance of this object.
+	static const CrewColumn instance;
+
+	explicit constexpr CrewColumn() :
+		Column(IDS_MAIN_COLUMN_CREW) {
+	}
+
+	bool update(MainWindow::TrainInfo &dest, const soap::TrainData &source) const override {
+		bool changed = dest.engineerType != source.engineerType || dest.engineerName != source.engineerName;
+		dest.engineerType = source.engineerType;
+		dest.engineerName = source.engineerName;
+		return changed;
+	}
+
+	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &) const override {
+		return train.engineerName;
+	}
+
+	int compare(const MainWindow::TrainInfo &x, const MainWindow::TrainInfo &y) const override {
+		if(x.engineerType != y.engineerType) {
+			auto mapToSortKey = [](soap::EngineerType t) -> unsigned int {
+				switch(t) {
+					case soap::EngineerType::NONE:
+						return 2;
+					case soap::EngineerType::PLAYER:
+						return 0;
+					case soap::EngineerType::AI:
+						return 1;
+				}
+				return 3;
+			};
+			return mapToSortKey(x.engineerType) < mapToSortKey(y.engineerType);
+		} else {
+			return x.engineerName < y.engineerName;
+		}
+	}
+};
+
+constinit const CrewColumn CrewColumn::instance;
+
 // The columns.
 static constinit const std::array columnMetadata{
 	static_cast<const Column *>(&LeadUnitColumn::instance),
@@ -315,6 +358,7 @@ static constinit const std::array columnMetadata{
 	static_cast<const Column *>(&weightColumn),
 	static_cast<const Column *>(&speedColumn),
 	static_cast<const Column *>(&TerritoryColumn::instance),
+	static_cast<const Column *>(&CrewColumn::instance),
 };
 
 // The age threshold above which trains are removed.
@@ -327,10 +371,11 @@ constinit const wchar_t MainWindow::windowClass[] = L"main";
 MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 	Window(handle, pump),
 	trains(),
+	driverImageList(nullptr),
 	font(nullptr),
 	timeFrame(util::createWindowEx(0, WC_BUTTONW, util::loadString(instance(), IDS_MAIN_TIME_FRAME).c_str(), BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, *this, nullptr, instance(), nullptr)),
 	timeLabel(util::createWindowEx(0, WC_STATICW, L"", WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, timeFrame, nullptr, instance(), nullptr)),
-	trainsView(util::createWindowEx(WS_EX_CLIENTEDGE, WC_LISTVIEWW, L"", LVS_REPORT | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, *this, nullptr, instance(), nullptr)),
+	trainsView(util::createWindowEx(WS_EX_CLIENTEDGE, WC_LISTVIEWW, L"", LVS_REPORT | LVS_SHAREIMAGELISTS | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, *this, nullptr, instance(), nullptr)),
 	getDispInfoBuffer(),
 	sortColumn(0),
 	sortOrder(1),
@@ -340,6 +385,15 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 	receiveMessagesAction(receiveMessages()),
 	enabledTerritories([]() {decltype(enabledTerritories) b; b.set(); return b; }()),
 	enabledUnknownTerritories(true) {
+	// Load the driver image list.
+	driverImageList.reset(ImageList_LoadImageW(instance(), MAKEINTRESOURCE(IDB_DRIVER_ICONS), 24, 0, CLR_DEFAULT, IMAGE_BITMAP, LR_MONOCHROME));
+	if(!driverImageList) {
+		winrt::throw_last_error();
+	}
+	for(int i : {LVSIL_NORMAL, LVSIL_SMALL}) {
+		ListView_SetImageList(trainsView, driverImageList.get(), i);
+	}
+
 	// Enable menus to report clicks via WM_MENUCOMMAND instead of WM_COMMAND.
 	HMENU bar = winrt::check_pointer(GetMenu(*this));
 	{
@@ -661,8 +715,12 @@ winrt::Windows::Foundation::IAsyncAction MainWindow::receiveMessages() {
 
 				// Fill the data provided by Run 8, keeping track of which fields changed.
 				std::bitset<columnMetadata.size()> columnsChanged;
+				bool crewChanged = false;
 				for(size_t i = 0; i != columnMetadata.size(); ++i) {
 					columnsChanged[i] = columnMetadata[i]->update(element->second, *data);
+					if(columnMetadata[i] == &CrewColumn::instance) {
+						crewChanged = columnsChanged[i];
+					}
 				}
 
 				// Calculate where in the list the train should appear.
@@ -697,8 +755,9 @@ winrt::Windows::Foundation::IAsyncAction MainWindow::receiveMessages() {
 						}
 					}
 					LVITEMW item = {
-						.mask = LVIF_PARAM,
+						.mask = LVIF_IMAGE | LVIF_PARAM,
 						.iItem = newIndex,
+						.iImage = static_cast<int>(data->engineerType),
 						.lParam = reinterpret_cast<LPARAM>(&element->second),
 					};
 					ListView_InsertItem(trainsView, &item);
@@ -713,6 +772,14 @@ winrt::Windows::Foundation::IAsyncAction MainWindow::receiveMessages() {
 					if(columnsChanged[i]) {
 						ListView_SetItemText(trainsView, newIndex, i, LPSTR_TEXTCALLBACK);
 					}
+				}
+				if(crewChanged && newIndex == oldIndex) {
+					LVITEMW item = {
+						.mask = LVIF_IMAGE,
+						.iItem = newIndex,
+						.iImage = static_cast<int>(data->engineerType),
+					};
+					ListView_SetItem(trainsView, &item);
 				}
 			} else {
 				// See if we already have a record of this train, from when it was in a different territory or when this territory was previously enabled.

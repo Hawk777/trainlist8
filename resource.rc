@@ -28,6 +28,14 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 // remains consistent on all systems.
 IDI_TRAINLIST8          ICON                    "trainlist8.ico"
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_DRIVER_ICONS        BITMAP                  "driver-icons.bmp"
+
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -161,6 +169,7 @@ BEGIN
     IDS_MAIN_COLUMN_WEIGHT  "Weight (tons)"
     IDS_MAIN_COLUMN_SPEED   "Speed (mph)"
     IDS_MAIN_COLUMN_TERRITORY "Territory"
+    IDS_MAIN_COLUMN_CREW    "Crew"
 END
 
 STRINGTABLE

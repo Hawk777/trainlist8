@@ -81,6 +81,10 @@ void util::FontDeleter::operator()(HFONT font) const {
 	DeleteObject(font);
 }
 
+void util::ImageListDeleter::operator()(HIMAGELIST imageList) const {
+	ImageList_Destroy(imageList);
+}
+
 void util::HeapDeleter::operator()(WS_HEAP *heap) const {
 	WsFreeHeap(heap);
 }

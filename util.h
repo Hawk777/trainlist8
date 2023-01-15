@@ -50,6 +50,13 @@ class HeapDeleter final {
 	void operator()(WS_HEAP *heap) const;
 };
 
+// A deleter for image lists that can be used with unique_ptr.
+class ImageListDeleter final {
+	public:
+	using pointer = HIMAGELIST;
+	void operator()(HIMAGELIST imageList) const;
+};
+
 // A deleter for messages that can be used with unique_ptr.
 class MessageDeleter final {
 	public:
