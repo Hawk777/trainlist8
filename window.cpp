@@ -97,10 +97,10 @@ Window::operator HWND() const {
 	return handle_;
 }
 
-HINSTANCE Window::instance() const {
-	return reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(handle_, GWLP_HINSTANCE));
-}
-
 unsigned int Window::dpi() const {
 	return dpi_;
+}
+
+HINSTANCE Window::instance() const {
+	return reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(handle_, GWLP_HINSTANCE));
 }
