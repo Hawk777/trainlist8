@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <utility>
 #include "message_pump.h"
+#include "resource.h"
+#include "util.h"
 #include "window.h"
 
 using trainlist8::Window;
@@ -83,13 +85,20 @@ LRESULT WINAPI Window::windowProcThunk(HWND window, unsigned int message, WPARAM
 Window::Window(HWND handle, MessagePump &pump) :
 	pump(pump),
 	handle_(handle),
-	dpi_(getDPIForWindow(handle)) {
+	dpi_(getDPIForWindow(handle)),
+	largeIcon(NULL),
+	smallIcon(NULL) {
 	SetWindowLongPtrW(handle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 	pump.windows.insert(this);
 }
 
 Window::~Window() {
 	pump.windows.erase(this);
+	for(HICON i : {largeIcon, smallIcon}) {
+		if(i) {
+			DestroyIcon(i);
+		}
+	}
 }
 
 Window::operator HWND() const {
@@ -103,4 +112,32 @@ unsigned int Window::dpi() const {
 
 HINSTANCE Window::instance() const {
 	return reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(handle_, GWLP_HINSTANCE));
+}
+
+void Window::updateIcon() {
+	struct Params {
+		HICON Window::*handle;
+		int widthMetric, heightMetric, iconType;
+	};
+	static constinit const Params params[] = {
+		{&Window::largeIcon, SM_CXICON, SM_CYICON, ICON_BIG},
+		{&Window::smallIcon, SM_CXSMICON, SM_CYSMICON, ICON_SMALL},
+	};
+	HINSTANCE inst = instance();
+	for(const Params &i : params) {
+		int width = GetSystemMetricsForDpi(i.widthMetric, dpi_);
+		if(!width) {
+			winrt::throw_last_error();
+		}
+		int height = GetSystemMetricsForDpi(i.heightMetric, dpi_);
+		if(!height) {
+			winrt::throw_last_error();
+		}
+		HICON oldIcon = this->*i.handle;
+		this->*i.handle = util::loadIconWithScaleDown(inst, MAKEINTRESOURCE(IDI_TRAINLIST8), width, height);
+		SendMessage(handle_, WM_SETICON, i.iconType, reinterpret_cast<LPARAM>(this->*i.handle));
+		if(oldIcon) {
+			DestroyIcon(oldIcon);
+		}
+	}
 }

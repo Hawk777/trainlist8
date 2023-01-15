@@ -54,7 +54,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, wchar_t *, int showCommand) {
 		windowClass.cbSize = sizeof(windowClass);
 		windowClass.lpfnWndProc = &trainlist8::Window::windowProcThunk;
 		windowClass.hInstance = instance;
-		windowClass.hIcon = static_cast<HICON>(trainlist8::util::loadImage(nullptr, IDI_APPLICATION, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 		windowClass.hCursor = static_cast<HCURSOR>(trainlist8::util::loadImage(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 		windowClass.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_BTNFACE + 1);
 		windowClass.lpszClassName = trainlist8::WelcomeWindow::windowClass;
@@ -66,7 +65,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, wchar_t *, int showCommand) {
 		windowClass.cbSize = sizeof(windowClass);
 		windowClass.lpfnWndProc = &trainlist8::Window::windowProcThunk;
 		windowClass.hInstance = instance;
-		windowClass.hIcon = static_cast<HICON>(trainlist8::util::loadImage(nullptr, IDI_APPLICATION, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 		windowClass.hCursor = static_cast<HCURSOR>(trainlist8::util::loadImage(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 		windowClass.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_BTNFACE + 1);
 		windowClass.lpszMenuName = MAKEINTRESOURCE(IDR_MAIN_MENU);

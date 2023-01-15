@@ -27,6 +27,7 @@ WelcomeWindow::WelcomeWindow(HWND handle, MessagePump &pump) :
 	closePending(false),
 	quitOnDestroy(true) {
 	Button_SetCheck(localhostRadio, BST_CHECKED);
+	updateIcon();
 	updateLayoutAndFont();
 	updateControlsEnabled();
 }
@@ -88,6 +89,7 @@ LRESULT WelcomeWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lP
 		{
 			const RECT &rect = *reinterpret_cast<const RECT *>(lParam);
 			SetWindowPos(*this, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER);
+			updateIcon();
 			updateLayoutAndFont();
 		}
 		return 0;

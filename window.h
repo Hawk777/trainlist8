@@ -29,6 +29,7 @@ class Window {
 
 	unsigned int dpi() const;
 	HINSTANCE instance() const;
+	void updateIcon();
 	virtual LRESULT windowProc(unsigned int message, WPARAM wParam, LPARAM lParam) = 0;
 
 	private:
@@ -36,6 +37,7 @@ class Window {
 
 	HWND handle_;
 	unsigned int dpi_;
+	HICON largeIcon, smallIcon;
 };
 }
 

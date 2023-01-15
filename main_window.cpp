@@ -457,6 +457,7 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 	}
 
 	// Initialize UI layout.
+	updateIcon();
 	updateLayoutAndFont();
 	updateColumnHeaderArrows();
 }
@@ -475,6 +476,7 @@ LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lPara
 		{
 			const RECT &rect = *reinterpret_cast<const RECT *>(lParam);
 			SetWindowPos(*this, nullptr, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER);
+			updateIcon();
 			updateLayoutAndFont();
 		}
 		return 0;

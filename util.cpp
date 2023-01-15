@@ -121,6 +121,16 @@ HWND util::createWindowEx(DWORD exStyle, const wchar_t *className, const wchar_t
 	return ret;
 }
 
+HICON util::loadIconWithScaleDown(HINSTANCE instance, const wchar_t *name, int width, int height) {
+	HICON ret = nullptr;
+	HRESULT result = LoadIconWithScaleDown(instance, name, width, height, &ret);
+	if(SUCCEEDED(result)) {
+		return ret;
+	} else {
+		winrt::throw_hresult(result);
+	}
+}
+
 HANDLE util::loadImage(HINSTANCE instance, const wchar_t *name, unsigned int type, int width, int height, unsigned int options) {
 	HANDLE ret = LoadImageW(instance, name, type, width, height, options);
 	if(!ret) {

@@ -114,6 +114,9 @@ std::unique_ptr<HFONT, FontDeleter> createMessageBoxFont(unsigned int size, unsi
 // Create a window, throwing an exception on failure.
 HWND createWindowEx(DWORD exStyle, const wchar_t *className, const wchar_t *windowName, DWORD style, int x, int y, int width, int height, HWND parent, HMENU menu, HINSTANCE instance, void *param);
 
+// Loads an icon, throwing an exception on failure.
+HICON loadIconWithScaleDown(HINSTANCE instance, const wchar_t *name, int width, int height);
+
 // Loads an image, throwing an exception on failure.
 HANDLE loadImage(HINSTANCE instance, const wchar_t *name, unsigned int type, int width, int height, unsigned int options);
 
