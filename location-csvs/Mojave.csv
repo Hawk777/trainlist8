@@ -1,0 +1,84 @@
+Route,Block ID,Location
+Mojave Sub,230,App to CP Lopez
+Mojave Sub,233,App to CP Lopez M1
+Mojave Sub,232,App to CP Lopez M2
+Mojave Sub,213,App to CP Gomez M1
+Mojave Sub,212,App to CP Gomez M2
+Mojave Sub,126,Between Gomez and Bakersfield M1
+Mojave Sub,129,between Gomez and West Bakersfield M1
+Mojave Sub,127,Between Bakersfield and West Bakersfield M2
+Mojave Sub,125,M1 between Amtrak Bakersfield and Bakersfield
+Mojave Sub,149,M2 between Yard and Bakersfield M2
+Mojave Sub,122,BNSF M1 to Kern Jct
+Mojave Sub,150,BNSF M2 to Kern Jct
+Mojave Sub,235,UP at WACO (West)
+Mojave Sub,227,WACO SSDG
+Mojave Sub,228,UP Main @Waco
+Mojave Sub,"221,222,223,224",Single Main between Waco and North Bakersfield
+Mojave Sub,218,UP Main 2 between North Bakersfield & UP Bakersfield Yd
+Mojave Sub,"147,216",UP Main 1 betweeen North Bakersfield & Kern Jct
+Mojave Sub,"142,143,144,8,225,141,6",UP Main 2 between Kern Jct and Sand Cut
+Mojave Sub,"5,12,7,9,10,118",UP Main 1 between Kern Jct and Sand Cut
+Mojave Sub,"16,18",UP Main 2between Sand Cut and Bena
+Mojave Sub,"15,17",UP Main 1 between Sandcut and Bena
+Mojave Sub,"20,21",Between Bena and CP Ilmon
+Mojave Sub,"24,26,29",#2 Main between CP Caliente and CP Ilmon
+Mojave Sub,"23,27,28",#1 Main between CP Caliente and CP Ilmon
+Mojave Sub,"32,33,34",single main between CP Caliente and Allard
+Mojave Sub,37,#2Main between Allard and X over
+Mojave Sub,36,#1 Main between Alllard and X Over
+Mojave Sub,41,#2 Main between X over and Bealville
+Mojave Sub,40,#1 Main between X over and Bealville
+Mojave Sub,"43,44",Single Main between Bealvilee and Cliff
+Mojave Sub,47,Cliff SSDG
+Mojave Sub,46,Cliff Main
+Mojave Sub,"49,50,51",Single Main between Cliff and Rowen
+Mojave Sub,54,Rowen SSDG
+Mojave Sub,53,Rowen Main
+Mojave Sub,"56,57",Single Main between Rowen and Woodward
+Mojave Sub,60,Woodward SSDG
+Mojave Sub,59,Woodward Main
+Mojave Sub,"62,63",Signle Main between Woodward and Walong
+Mojave Sub,66,Walong SSDG
+Mojave Sub,65,Walong Main
+Mojave Sub,71,App to CP Marcel
+Mojave Sub,72,App to CP Marcel (bottom Track)
+Mojave Sub,"74,75,76",Single Main between Marcel and Cable
+Mojave Sub,"78,81",M2 between Cable and X over
+Mojave Sub,"79,80",M1 btween Cable and X over
+Mojave Sub,"85,87",M2 between X over and Teh
+Mojave Sub,"84,86",M1 between Xover and Teh
+Mojave Sub,70,M2 App block to Teh
+Mojave Sub,91,M1 App block to Teh
+Mojave Sub,"96,95,90,120",M2 between Teh App Block and Cameron App Block
+Mojave Sub,"115,93,94,92",M1 between Teh App Block and Cameron App Block
+Mojave Sub,69,M2 App Cameron Block 
+Mojave Sub,97,M1 App Camron Block
+Mojave Sub,"107,11,104,103",M2 Btween Camron and BNSF X Over at Mojave
+Mojave Sub,"102,105,108,109",M1 Between Camron and BNSF X Over at Mojave
+Mojave Sub,106,M2 App to BNSF X Over at Mojave
+Mojave Sub,110,M1 App to BNSF X OVer at Mojave
+Mojave Sub,135,BNSF Main at Mojave Jct
+Mojave Sub,"154,155",UP Main to Ansel
+Mojave Sub,161,BNSF Single main to Sanborn
+Mojave Sub,159,Main at Sanborn
+Mojave Sub,160,SSDG Sanborn
+Mojave Sub,"162,167",Single main between Sanborn and Bisel
+Mojave Sub,165,Main at Bisel
+Mojave Sub,166,SSDG Bisel
+Mojave Sub,"169,171,172",Single main between Bisel and Edwards
+Mojave Sub,173,Edwards Main
+Mojave Sub,174,SSDG Edwards
+Mojave Sub,"176,180,181",Single main between Edwards and Silt
+Mojave Sub,178,Silt Main
+Mojave Sub,179,Silt SSDG
+Mojave Sub,"182,185",Signle Main between Silt and Boron
+Mojave Sub,186,Boron Main
+Mojave Sub,187,Boron SSDG
+Mojave Sub,"189,190,191,193",Single main between Boron and Jim Grey
+Mojave Sub,194,Jim Grey Main
+Mojave Sub,195,Jim Grey  SSDG
+Mojave Sub,"197,207,208,209,210,000",Single main between Jim Grey and Hinkley
+Mojave Sub,204,Hinkley Main
+Mojave Sub,205,Hinkley SSDG
+Mojave Sub,"202,220",Single main between Hinkley and HutT

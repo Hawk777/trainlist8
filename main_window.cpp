@@ -9,6 +9,7 @@
 #include <limits>
 #include <ranges>
 #include "error.h"
+#include "location.h"
 #include "main_window.h"
 #include "resource.h"
 #include "soap.h"
@@ -307,6 +308,56 @@ class TerritoryColumn final : public Column {
 };
 constinit const TerritoryColumn TerritoryColumn::instance;
 
+// The location column.
+class LocationColumn final : public Column {
+	public:
+	// The only instance of this object.
+	static const LocationColumn instance;
+
+	explicit constexpr LocationColumn() :
+		Column(IDS_MAIN_COLUMN_LOCATION) {
+	}
+
+	bool update(MainWindow::TrainInfo &dest, const soap::TrainData &source) const override {
+		bool changed = source.block != dest.block;
+		dest.block = source.block;
+		if(dest.block != -1 && (location::nameByBlock(dest.block) || !location::nameByBlock(dest.lastNamedBlock))) {			dest.lastNamedBlock = dest.block;
+		}
+		return changed;
+	}
+
+	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &scratch) const override {
+		if(train.lastNamedBlock == train.block) {
+			if(train.block == -1) {
+				// The train is, and always has been, in unsignalled territory.
+				scratch.clear();
+				return scratch;
+			} else if(const std::wstring *loc = location::nameByBlock(train.block); loc) {
+				// We have a name for the current location.
+				return *loc;
+			} else {
+				// We don't have a name for any location, current or historical. Show the raw block ID.
+				formatInteger(train.block, scratch);
+				return scratch;
+			}
+		} else {
+			// We don't have a name for where the train is now, but we do have a name for where it used to be. Show that.
+			return *location::nameByBlock(train.lastNamedBlock);
+		}
+	}
+
+	int compare(const MainWindow::TrainInfo &x, const MainWindow::TrainInfo &y) const override {
+		if(x.block < y.block) {
+			return -1;
+		} else if(x.block > y.block) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+};
+constinit const LocationColumn LocationColumn::instance;
+
 // The crew column.
 class CrewColumn final : public Column {
 	public:
@@ -358,6 +409,7 @@ static constinit const std::array columnMetadata{
 	static_cast<const Column *>(&weightColumn),
 	static_cast<const Column *>(&speedColumn),
 	static_cast<const Column *>(&TerritoryColumn::instance),
+	static_cast<const Column *>(&LocationColumn::instance),
 	static_cast<const Column *>(&CrewColumn::instance),
 };
 

@@ -24,6 +24,7 @@
 #define IDS_MAIN_COLUMN_WEIGHT          406
 #define IDS_MAIN_COLUMN_SPEED           407
 #define IDS_MAIN_COLUMN_TERRITORY       408
+#define IDS_MAIN_COLUMN_LOCATION        409
 #define IDS_MAIN_COLUMN_CREW            410
 #define IDS_TERRITORY_BAKERSFIELD       800
 #define IDS_TERRITORY_MOJAVE            801
@@ -45,7 +46,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        115
+#define _APS_NEXT_RESOURCE_VALUE        116
 #define _APS_NEXT_COMMAND_VALUE         40006
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101

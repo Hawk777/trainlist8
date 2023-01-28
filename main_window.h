@@ -52,6 +52,12 @@ class MainWindow final : public Window {
 
 		// The most recent territory, or an empty optional if the train is in an unsignalled location.
 		std::optional<unsigned int> territory;
+
+		// The current block ID.
+		int32_t block = -1;
+
+		// The block ID that the train most recently occupied that has a known name.
+		int32_t lastNamedBlock = -1;
 	};
 
 	static const wchar_t windowClass[];

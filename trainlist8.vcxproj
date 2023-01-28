@@ -105,6 +105,7 @@
   <ItemGroup>
     <ClCompile Include="connection.cpp" />
     <ClCompile Include="error.cpp" />
+    <ClCompile Include="location.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main_window.cpp" />
     <ClCompile Include="message_pump.cpp" />
@@ -121,6 +122,7 @@
   <ItemGroup>
     <ClInclude Include="connection.h" />
     <ClInclude Include="error.h" />
+    <ClInclude Include="location.h" />
     <ClInclude Include="main_window.h" />
     <ClInclude Include="message_pump.h" />
     <ClInclude Include="resource.h" />
@@ -132,12 +134,17 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="location.rc" />
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="app.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="generate-locations.py">
+      <FileType>Script</FileType>
+    </None>
+    <None Include="location-csvs\Mojave.csv" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

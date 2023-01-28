@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <locale>
+#include "location.h"
 #include "main_window.h"
 #include "message_pump.h"
 #include "resource.h"
@@ -37,8 +38,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, wchar_t *, int showCommand) {
 		return winrt::Windows::System::DispatcherQueueController(raw, winrt::take_ownership_from_abi);
 	}();
 
-	// Load territory name strings.
+	// Load territory and location name strings.
 	trainlist8::territory::init(instance);
+	trainlist8::location::init(instance);
 
 	// Initialize common controls.
 	{
