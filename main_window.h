@@ -3,6 +3,7 @@
 #if !defined(MAIN_WINDOW_H)
 #define MAIN_WINDOW_H
 
+#include <atomic>
 #include <bitset>
 #include <optional>
 #include <string>
@@ -83,6 +84,11 @@ class MainWindow final : public Window {
 	LRESULT windowProc(unsigned int message, WPARAM wParam, LPARAM lParam) override;
 
 	private:
+	enum class DateTimeFormat {
+		LOCALE,
+		ISO_8601,
+	};
+
 	std::unordered_map<uint32_t, TrainInfo> trains;
 	std::unique_ptr<HIMAGELIST, util::ImageListDeleter> driverImageList;
 	std::unique_ptr<HFONT, util::FontDeleter> font;
@@ -96,6 +102,7 @@ class MainWindow final : public Window {
 	winrt::Windows::Foundation::IAsyncAction receiveMessagesAction;
 	std::bitset<territory::count> enabledTerritories;
 	bool enabledUnknownTerritories;
+	std::atomic<DateTimeFormat> dateTimeFormat;
 
 	static HMENU findSubMenuContainingID(HMENU parent, unsigned int id);
 
@@ -106,6 +113,7 @@ class MainWindow final : public Window {
 	void updateLayoutAndFont();
 	void updateLayout();
 	void updateColumnHeaderArrows();
+	void updateDateTimeMenuItems();
 };
 }
 

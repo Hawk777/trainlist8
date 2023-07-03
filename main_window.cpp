@@ -496,7 +496,8 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 	connection(std::move(connection)),
 	receiveMessagesAction(receiveMessages()),
 	enabledTerritories([]() {decltype(enabledTerritories) b; b.set(); return b; }()),
-	enabledUnknownTerritories(true) {
+	enabledUnknownTerritories(true),
+	dateTimeFormat(DateTimeFormat::LOCALE) {
 	// Load the driver image list.
 	driverImageList.reset(ImageList_LoadImageW(instance(), MAKEINTRESOURCE(IDB_DRIVER_ICONS), 24, 0, CLR_DEFAULT, IMAGE_BITMAP, LR_MONOCHROME));
 	if(!driverImageList) {
@@ -544,6 +545,9 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 			winrt::check_bool(InsertMenuItemW(territoriesMenu, i, TRUE, &info));
 		}
 	}
+
+	// Tick the proper date/time format menu item.
+	updateDateTimeMenuItems();
 
 	// Register for notification of completion of the receive-messages action.
 	auto uiThread = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
@@ -664,6 +668,20 @@ LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lPara
 					enabledUnknownTerritories = info.fState & MFS_CHECKED;
 				}
 				break;
+
+				case ID_MAIN_MENU_VIEW_DATE_LOCALE:
+				{
+					dateTimeFormat = DateTimeFormat::LOCALE;
+					updateDateTimeMenuItems();
+				}
+				break;
+
+				case ID_MAIN_MENU_VIEW_DATE_ISO8601:
+				{
+					dateTimeFormat = DateTimeFormat::ISO_8601;
+					updateDateTimeMenuItems();
+				}
+				break;
 			}
 		}
 		return 0;
@@ -763,20 +781,35 @@ winrt::Windows::Foundation::IAsyncAction MainWindow::receiveMessages() {
 			const soap::SimulationState *state = *statePointer;
 
 			// Format the current date and time.
+			const wchar_t *datePicture = nullptr, *timePicture = nullptr;
+			uint32_t dateFlags = 0;
+			switch(dateTimeFormat) {
+				case DateTimeFormat::LOCALE:
+					datePicture = timePicture = nullptr;
+					dateFlags = DATE_AUTOLAYOUT | DATE_SHORTDATE;
+					break;
+				case DateTimeFormat::ISO_8601:
+					datePicture = L"yyyy'-'MM'-'dd";
+					timePicture = L"HH':'mm':'ss";
+					dateFlags = 0;
+					break;
+			}
 			FILETIME ft;
 			winrt::check_hresult(WsDateTimeToFileTime(&state->time, &ft, nullptr));
 			SYSTEMTIME st;
 			winrt::check_bool(FileTimeToSystemTime(&ft, &st));
-			int dateLen = GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, DATE_AUTOLAYOUT | DATE_SHORTDATE, &st, nullptr, nullptr, 0, nullptr);
+			int dateLen = GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, dateFlags, &st, datePicture, nullptr, 0, nullptr);
 			if(!dateLen) {
+				OutputDebugStringW(L"date failed\n");
 				winrt::throw_last_error();
 			}
-			int timeLen = GetTimeFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &st, nullptr, nullptr, 0);
+			int timeLen = GetTimeFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &st, timePicture, nullptr, 0);
 			if(!timeLen) {
+				OutputDebugStringW(L"time failed\n");
 				winrt::throw_last_error();
 			}
 			std::wstring buffer(dateLen + 1 /* space */ + timeLen, L'\0');
-			dateLen = GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, DATE_AUTOLAYOUT | DATE_SHORTDATE, &st, nullptr, buffer.data(), buffer.size(), nullptr);
+			dateLen = GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, dateFlags, &st, datePicture, buffer.data(), buffer.size(), nullptr);
 			if(!dateLen) {
 				winrt::throw_last_error();
 			}
@@ -786,7 +819,7 @@ winrt::Windows::Foundation::IAsyncAction MainWindow::receiveMessages() {
 			assert(static_cast<unsigned int>(dateLen) + 1 < buffer.size());
 			buffer[dateLen] = L' ';
 			size_t timeStartPos = dateLen + 1;
-			timeLen = GetTimeFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &st, nullptr, buffer.data() + timeStartPos, buffer.size() - timeStartPos);
+			timeLen = GetTimeFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &st, timePicture, buffer.data() + timeStartPos, buffer.size() - timeStartPos);
 			if(!timeLen) {
 				winrt::throw_last_error();
 			}
@@ -950,5 +983,25 @@ void MainWindow::updateColumnHeaderArrows() {
 			item.fmt = fmt;
 			Header_SetItem(header, i, &item);
 		}
+	}
+}
+
+void MainWindow::updateDateTimeMenuItems() {
+	HMENU bar = winrt::check_pointer(GetMenu(*this));
+	HMENU viewMenu = winrt::check_pointer(findSubMenuContainingID(bar, ID_MAIN_MENU_VIEW_DATE_LOCALE));
+	HMENU dateTimeMenu = winrt::check_pointer(findSubMenuContainingID(viewMenu, ID_MAIN_MENU_VIEW_DATE_LOCALE));
+
+	unsigned int checked = 0;
+	switch(dateTimeFormat) {
+		case DateTimeFormat::LOCALE:
+			checked = ID_MAIN_MENU_VIEW_DATE_LOCALE;
+			break;
+
+		case DateTimeFormat::ISO_8601:
+			checked = ID_MAIN_MENU_VIEW_DATE_ISO8601;
+			break;
+	}
+	if(!CheckMenuRadioItem(dateTimeMenu, ID_MAIN_MENU_VIEW_DATE_LOCALE, ID_MAIN_MENU_VIEW_DATE_ISO8601, checked, MF_BYCOMMAND)) {
+		winrt::throw_last_error();
 	}
 }
