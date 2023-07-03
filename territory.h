@@ -9,7 +9,7 @@
 
 namespace trainlist8 {
 namespace territory {
-constexpr size_t count = 7;
+constexpr size_t count = 8;
 void init(HINSTANCE instance);
 std::optional<unsigned int> idByBlock(int32_t block);
 unsigned int idByIndex(size_t index);

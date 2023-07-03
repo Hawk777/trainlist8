@@ -16,6 +16,7 @@ constexpr std::array<std::pair<unsigned int, unsigned int>, count> resourceIDs{{
 	{150, IDS_TERRITORY_BARSTOW},
 	{200, IDS_TERRITORY_SBD},
 	{250, IDS_TERRITORY_BAKERSFIELD},
+	{260, IDS_TERRITORY_ROSEVILLE},
 	}};
 static_assert(std::is_sorted(resourceIDs.cbegin(), resourceIDs.cend()));
 

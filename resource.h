@@ -34,6 +34,7 @@
 #define IDS_TERRITORY_CAJON             805
 #define IDS_TERRITORY_SBD               806
 #define IDS_TERRITORY_ALHAMBRA          807
+#define IDS_TERRITORY_ROSEVILLE         807
 #define IDI_TRAINLIST8                  900
 #define ID_FILE_EXIT                    40001
 #define ID_MAIN_MENU_FILE_EXIT          40002

@@ -182,6 +182,7 @@ BEGIN
     IDS_TERRITORY_SELIGMAN  "Seligman"
     IDS_TERRITORY_CAJON     "Cajon"
     IDS_TERRITORY_SBD       "San Bernardino"
+    IDS_TERRITORY_ROSEVILLE "Roseville"
 END
 
 #endif    // English (Neutral) resources
