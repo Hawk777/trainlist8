@@ -167,6 +167,7 @@ BEGIN
     IDS_MAIN_COLUMN_SYMBOL  "Symbol"
     IDS_MAIN_COLUMN_LENGTH  "Length (feet)"
     IDS_MAIN_COLUMN_WEIGHT  "Weight (tons)"
+    IDS_MAIN_COLUMN_HPT     "HP/t"
     IDS_MAIN_COLUMN_SPEED   "Speed (mph)"
     IDS_MAIN_COLUMN_TERRITORY "Territory"
     IDS_MAIN_COLUMN_LOCATION "Location"

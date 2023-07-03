@@ -293,6 +293,9 @@ constexpr const NumberColumn<uint32_t> lengthColumn(IDS_MAIN_COLUMN_LENGTH, &Mai
 // The train weight column.
 constexpr const NumberColumn<uint32_t> weightColumn(IDS_MAIN_COLUMN_WEIGHT, &MainWindow::TrainInfo::weight, &soap::TrainData::weight, 0);
 
+// The train HP/t column.
+constexpr const NumberColumn<float> horsepowerPerTonColumn(IDS_MAIN_COLUMN_HPT, &MainWindow::TrainInfo::horsepowerPerTon, &soap::TrainData::horsepowerPerTon, 1);
+
 // The train speed column.
 constexpr const NumberColumn<int, float> speedColumn(IDS_MAIN_COLUMN_SPEED, &MainWindow::TrainInfo::speed, &soap::TrainData::speed, 0);
 
@@ -463,6 +466,7 @@ static constinit const std::array columnMetadata{
 	static_cast<const Column *>(&SymbolColumn::instance),
 	static_cast<const Column *>(&lengthColumn),
 	static_cast<const Column *>(&weightColumn),
+	static_cast<const Column *>(&horsepowerPerTonColumn),
 	static_cast<const Column *>(&speedColumn),
 	static_cast<const Column *>(&TerritoryColumn::instance),
 	static_cast<const Column *>(&LocationColumn::instance),

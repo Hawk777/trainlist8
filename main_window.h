@@ -47,6 +47,9 @@ class MainWindow final : public Window {
 		// The most recent train weight.
 		uint32_t weight;
 
+		// The horsepower per ton.
+		float horsepowerPerTon;
+
 		// The most recent train speed.
 		int speed;
 

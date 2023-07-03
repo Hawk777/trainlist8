@@ -22,10 +22,11 @@
 #define IDS_MAIN_COLUMN_SYMBOL          404
 #define IDS_MAIN_COLUMN_LENGTH          405
 #define IDS_MAIN_COLUMN_WEIGHT          406
-#define IDS_MAIN_COLUMN_SPEED           407
-#define IDS_MAIN_COLUMN_TERRITORY       408
-#define IDS_MAIN_COLUMN_LOCATION        409
-#define IDS_MAIN_COLUMN_CREW            410
+#define IDS_MAIN_COLUMN_HPT             407
+#define IDS_MAIN_COLUMN_SPEED           408
+#define IDS_MAIN_COLUMN_TERRITORY       409
+#define IDS_MAIN_COLUMN_LOCATION        410
+#define IDS_MAIN_COLUMN_CREW            411
 #define IDS_TERRITORY_BAKERSFIELD       800
 #define IDS_TERRITORY_MOJAVE            801
 #define IDS_TERRITORY_BARSTOW           802
