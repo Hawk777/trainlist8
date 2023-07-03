@@ -62,8 +62,14 @@ class MainWindow final : public Window {
 
 	// Scratch buffers used internally during text formatting.
 	struct ScratchBuffers final {
+		// A string buffer.
+		std::string string;
+
 		// A wstring buffer.
 		std::wstring wstring;
+
+		// Another wstring buffer.
+		std::wstring wstring2;
 	};
 
 	static const wchar_t windowClass[];

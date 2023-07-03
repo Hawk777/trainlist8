@@ -79,32 +79,69 @@ NUMBERFMTW integerFormat() {
 // The result is stored in the wstring field of the buffers parameter.
 template<std::integral T>
 void formatInteger(T value, MainWindow::ScratchBuffers &buffers) {
-	// Write the value, in locale-agnostic raw format, to a multibyte buffer.
-	static constexpr size_t bufferSize = std::numeric_limits<T>::digits10 + 3;
-	std::array<char, bufferSize> mbBuffer;
-	std::to_chars_result result = std::to_chars(mbBuffer.data(), mbBuffer.data() + mbBuffer.size(), value);
-	size_t mbLen = result.ptr - mbBuffer.data();
+	static constexpr size_t startBufferSize = std::numeric_limits<T>::digits10 + 3;
 
-	// Convert the multibyte string to a wide string.
-	std::array<wchar_t, bufferSize> wideBuffer;
-	int wideWritten = MultiByteToWideChar(CP_ACP, 0, mbBuffer.data(), mbLen, wideBuffer.data(), wideBuffer.size());
-	if(!wideWritten) {
-		winrt::throw_last_error();
+	// Write the value, in locale-agnostic raw format, to buffers.string.
+	{
+		buffers.string.resize(std::max(startBufferSize, buffers.string.capacity()));
+		for(;;) {
+			std::to_chars_result result = std::to_chars(buffers.string.data(), buffers.string.data() + buffers.string.size(), value);
+			if(result.ec == std::errc()) {
+				buffers.string.resize(result.ptr - buffers.string.data());
+				break;
+			} else if(result.ec == std::errc::value_too_large) {
+				// to_chars does not tell us how much space it wanted, so just try doubling.
+				buffers.string.resize(buffers.string.size() * 2);
+			} else {
+				throw std::system_error(std::make_error_code(result.ec));
+			}
+		}
 	}
-	wideBuffer[wideWritten] = '\0';
+
+	// Convert the multibyte string in buffers.string to a wide string in buffers.wstring2.
+	for(;;) {
+		// Optimistically try an initial conversion with a buffer.
+		// Once wstring2 settles to a stable allocation, this will succeed nearly all the time, so is faster.
+		// It's slower (three calls instead of two) when the allocation is too small, but that should be rare.
+		buffers.wstring2.resize(std::max(startBufferSize, buffers.wstring2.capacity()));
+		int written = MultiByteToWideChar(CP_ACP, 0, buffers.string.data(), buffers.string.size(), buffers.wstring2.data(), buffers.wstring2.size());
+		if(written) {
+			buffers.wstring2.resize(written);
+			break;
+		}
+		if(GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+			winrt::throw_last_error();
+		}
+		// Buffer is too small. Make another call without a buffer, which will tell us how big a buffer is needed.
+		int needed = MultiByteToWideChar(CP_ACP, 0, buffers.string.data(), buffers.string.size(), nullptr, 0);
+		if(!needed) {
+			winrt::throw_last_error();
+		}
+		buffers.wstring2.resize(needed);
+	}
 
 	// Add proper number formatting.
 	NUMBERFMTW fmt = integerFormat();
-	int needed = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &fmt, nullptr, 0);
-	if(!needed) {
-		winrt::throw_last_error();
+	for(;;) {
+		// Optimistically try an initial conversion with a buffer.
+		// Once wstring2 settles to a stable allocation, this will succeed nearly all the time, so is faster.
+		// It's slower (three calls instead of two) when the allocation is too small, but that should be rare.
+		buffers.wstring.resize(std::max(startBufferSize, buffers.wstring.capacity()));
+		int written = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, buffers.wstring2.c_str(), &fmt, buffers.wstring.data(), buffers.wstring.size());
+		if(written) {
+			buffers.wstring.resize(written - 1 /* NUL */);
+			break;
+		}
+		if(GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+			winrt::throw_last_error();
+		}
+		// Buffer is too small. Make another call without a buffer, which will tell us how big a buffer is needed.
+		int needed = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, buffers.wstring2.c_str(), &fmt, nullptr, 0);
+		if(!needed) {
+			winrt::throw_last_error();
+		}
+		buffers.wstring.resize(needed);
 	}
-	buffers.wstring.resize(needed);
-	int written = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &fmt, buffers.wstring.data(), buffers.wstring.size());
-	if(!written) {
-		winrt::throw_last_error();
-	}
-	buffers.wstring.resize(written);
 }
 
 // Metadata about a column of the list.
