@@ -60,6 +60,12 @@ class MainWindow final : public Window {
 		int32_t lastNamedBlock = -1;
 	};
 
+	// Scratch buffers used internally during text formatting.
+	struct ScratchBuffers final {
+		// A wstring buffer.
+		std::wstring wstring;
+	};
+
 	static const wchar_t windowClass[];
 
 	explicit MainWindow(HWND handle, MessagePump &pump, Connection connection);
@@ -72,7 +78,7 @@ class MainWindow final : public Window {
 	std::unique_ptr<HIMAGELIST, util::ImageListDeleter> driverImageList;
 	std::unique_ptr<HFONT, util::FontDeleter> font;
 	HWND timeFrame, timeLabel, trainsView;
-	std::wstring getDispInfoBuffer;
+	ScratchBuffers getDispInfoBuffers;
 	unsigned int sortColumn;
 	int sortOrder;
 	size_t maxTextSize;

@@ -75,8 +75,10 @@ const NUMBERFMTW &integerFormat() {
 }
 
 // Formats an integer according to the current locale into a buffer.
+//
+// The result is stored in the wstring field of the buffers parameter.
 template<std::integral T>
-void formatInteger(T value, std::wstring &buffer) {
+void formatInteger(T value, MainWindow::ScratchBuffers &buffers) {
 	// Write the value, in locale-agnostic raw format, to a multibyte buffer.
 	static constexpr size_t bufferSize = std::numeric_limits<T>::digits10 + 3;
 	std::array<char, bufferSize> mbBuffer;
@@ -96,12 +98,12 @@ void formatInteger(T value, std::wstring &buffer) {
 	if(!needed) {
 		winrt::throw_last_error();
 	}
-	buffer.resize(needed);
-	int written = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &integerFormat(), buffer.data(), buffer.size());
+	buffers.wstring.resize(needed);
+	int written = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &integerFormat(), buffers.wstring.data(), buffers.wstring.size());
 	if(!written) {
 		winrt::throw_last_error();
 	}
-	buffer.resize(written);
+	buffers.wstring.resize(written);
 }
 
 // Metadata about a column of the list.
@@ -114,7 +116,7 @@ class Column {
 	virtual bool update(MainWindow::TrainInfo &dest, const soap::TrainData &source) const = 0;
 
 	// Formats the text for this column, given a scratch buffer which may (but need not) be used.
-	virtual const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &scratch) const = 0;
+	virtual const std::wstring &text(const MainWindow::TrainInfo &train, MainWindow::ScratchBuffers &scratch) const = 0;
 
 	// Compares two trains based on the value in this column.
 	virtual int compare(const MainWindow::TrainInfo &x, const MainWindow::TrainInfo &y) const = 0;
@@ -128,7 +130,7 @@ class Column {
 // Metadata about a list column that holds a string value.
 class StringColumn : public Column {
 	public:
-	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &) const override final {
+	const std::wstring &text(const MainWindow::TrainInfo &train, MainWindow::ScratchBuffers &) const override final {
 		return train.*member;
 	}
 
@@ -212,9 +214,9 @@ class IntegerColumn final : public Column {
 		return ret;
 	}
 
-	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &scratch) const override {
+	const std::wstring &text(const MainWindow::TrainInfo &train, MainWindow::ScratchBuffers &scratch) const override {
 		formatInteger(train.*member, scratch);
-		return scratch;
+		return scratch.wstring;
 	}
 
 	int compare(const MainWindow::TrainInfo &x, const MainWindow::TrainInfo &y) const override {
@@ -259,7 +261,7 @@ class TerritoryColumn final : public Column {
 		}
 	}
 
-	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &scratch) const override {
+	const std::wstring &text(const MainWindow::TrainInfo &train, MainWindow::ScratchBuffers &scratch) const override {
 		if(train.territory) {
 			const std::wstring *n = territory::nameByID(*train.territory);
 			if(n) {
@@ -268,12 +270,12 @@ class TerritoryColumn final : public Column {
 			} else {
 				// The territory does not have a known name. Render it as the integer instead.
 				formatInteger(*train.territory, scratch);
-				return scratch;
+				return scratch.wstring;
 			}
 		} else {
 			// The train is in an unsignalled location.
-			scratch.clear();
-			return scratch;
+			scratch.wstring.clear();
+			return scratch.wstring;
 		}
 	}
 
@@ -326,19 +328,19 @@ class LocationColumn final : public Column {
 		return changed;
 	}
 
-	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &scratch) const override {
+	const std::wstring &text(const MainWindow::TrainInfo &train, MainWindow::ScratchBuffers &scratch) const override {
 		if(train.lastNamedBlock == train.block) {
 			if(train.block == -1) {
 				// The train is, and always has been, in unsignalled territory.
-				scratch.clear();
-				return scratch;
+				scratch.wstring.clear();
+				return scratch.wstring;
 			} else if(const std::wstring *loc = location::nameByBlock(train.block); loc) {
 				// We have a name for the current location.
 				return *loc;
 			} else {
 				// We don't have a name for any location, current or historical. Show the raw block ID.
 				formatInteger(train.block, scratch);
-				return scratch;
+				return scratch.wstring;
 			}
 		} else {
 			// We don't have a name for where the train is now, but we do have a name for where it used to be. Show that.
@@ -375,7 +377,7 @@ class CrewColumn final : public Column {
 		return changed;
 	}
 
-	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &) const override {
+	const std::wstring &text(const MainWindow::TrainInfo &train, MainWindow::ScratchBuffers &) const override {
 		return train.engineerName;
 	}
 
@@ -428,7 +430,7 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 	timeFrame(util::createWindowEx(0, WC_BUTTONW, util::loadString(instance(), IDS_MAIN_TIME_FRAME).c_str(), BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, *this, nullptr, instance(), nullptr)),
 	timeLabel(util::createWindowEx(0, WC_STATICW, L"", WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, timeFrame, nullptr, instance(), nullptr)),
 	trainsView(util::createWindowEx(WS_EX_CLIENTEDGE, WC_LISTVIEWW, L"", LVS_REPORT | LVS_SHAREIMAGELISTS | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, *this, nullptr, instance(), nullptr)),
-	getDispInfoBuffer(),
+	getDispInfoBuffers(),
 	sortColumn(0),
 	sortOrder(1),
 	maxTextSize(0),
@@ -655,7 +657,7 @@ LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lPara
 						NMLVDISPINFO &info = *reinterpret_cast<NMLVDISPINFO *>(lParam);
 						const TrainInfo &train = *reinterpret_cast<const TrainInfo *>(info.item.lParam);
 						if(info.item.mask & LVIF_TEXT) {
-							info.item.pszText = const_cast<wchar_t *>(columnMetadata[info.item.iSubItem]->text(train, getDispInfoBuffer).c_str());
+							info.item.pszText = const_cast<wchar_t *>(columnMetadata[info.item.iSubItem]->text(train, getDispInfoBuffers).c_str());
 						}
 					}
 					return 0;
