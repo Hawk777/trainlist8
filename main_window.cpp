@@ -205,19 +205,19 @@ class IntegerColumn final : public Column {
 		soapMember(soapMember) {
 	}
 
-	bool update(MainWindow::TrainInfo &dest, const soap::TrainData &source) const {
+	bool update(MainWindow::TrainInfo &dest, const soap::TrainData &source) const override {
 		T newValue = static_cast<T>(source.*soapMember);
 		bool ret = dest.*member != newValue;
 		dest.*member = newValue;
 		return ret;
 	}
 
-	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &scratch) const {
+	const std::wstring &text(const MainWindow::TrainInfo &train, std::wstring &scratch) const override {
 		formatInteger(train.*member, scratch);
 		return scratch;
 	}
 
-	int compare(const MainWindow::TrainInfo &x, const MainWindow::TrainInfo &y) const {
+	int compare(const MainWindow::TrainInfo &x, const MainWindow::TrainInfo &y) const override {
 		T xValue = x.*member;
 		T yValue = y.*member;
 		return xValue < yValue ? -1 : xValue > yValue ? 1 : 0;
