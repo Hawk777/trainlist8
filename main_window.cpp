@@ -60,10 +60,10 @@ unsigned int getLocaleGrouping() {
 }
 
 // Returns a number format suitable for formatting numbers.
-NUMBERFMTW numberFormat() {
+NUMBERFMTW numberFormat(unsigned int decimalPlaces) {
 	static std::wstring decimalSeparator = getLocaleString(LOCALE_SDECIMAL);
 	static std::wstring thousandsSeparator = getLocaleString(LOCALE_STHOUSAND);
-	static NUMBERFMTW ret = {
+	static NUMBERFMTW base = {
 		.NumDigits = 0,
 		.LeadingZero = getLocaleInteger(LOCALE_ILZERO),
 		.Grouping = getLocaleGrouping(),
@@ -71,21 +71,33 @@ NUMBERFMTW numberFormat() {
 		.lpThousandSep = const_cast<wchar_t *>(thousandsSeparator.c_str()),
 		.NegativeOrder = getLocaleInteger(LOCALE_INEGNUMBER),
 	};
+	NUMBERFMTW ret = base;
+	ret.NumDigits = decimalPlaces;
 	return ret;
 }
+
+// A type that is either integral or floating-point.
+template<typename T>
+concept Numeric = std::integral<T> || std::floating_point<T>;
 
 // Formats a number according to the current locale into a buffer.
 //
 // The result is stored in the wstring field of the buffers parameter.
-template<std::integral T>
-void formatNumber(T value, MainWindow::ScratchBuffers &buffers) {
+template<Numeric T>
+void formatNumber(T value, MainWindow::ScratchBuffers &buffers, unsigned int decimalPlaces) {
 	static constexpr size_t startBufferSize = std::numeric_limits<T>::digits10 + 3;
 
 	// Write the value, in locale-agnostic raw format, to buffers.string.
 	{
 		buffers.string.resize(std::max(startBufferSize, buffers.string.capacity()));
 		for(;;) {
-			std::to_chars_result result = std::to_chars(buffers.string.data(), buffers.string.data() + buffers.string.size(), value);
+			std::to_chars_result result;
+			if constexpr(std::integral<T>) {
+				result = std::to_chars(buffers.string.data(), buffers.string.data() + buffers.string.size(), value);
+			} else {
+				// GetNumberFormatEx only likes fixed-point, not scientific notation.
+				result = std::to_chars(buffers.string.data(), buffers.string.data() + buffers.string.size(), value, std::chars_format::fixed);
+			}
 			if(result.ec == std::errc()) {
 				buffers.string.resize(result.ptr - buffers.string.data());
 				break;
@@ -121,7 +133,7 @@ void formatNumber(T value, MainWindow::ScratchBuffers &buffers) {
 	}
 
 	// Add proper number formatting.
-	NUMBERFMTW fmt = numberFormat();
+	NUMBERFMTW fmt = numberFormat(decimalPlaces);
 	for(;;) {
 		// Optimistically try an initial conversion with a buffer.
 		// Once wstring2 settles to a stable allocation, this will succeed nearly all the time, so is faster.
@@ -236,13 +248,14 @@ class SymbolColumn final : public StringColumn {
 constexpr const SymbolColumn SymbolColumn::instance;
 
 // Metadata about a list column that holds a numeric value.
-template<std::integral T, typename Source = T>
+template<Numeric T, typename Source = T>
 class NumberColumn final : public Column {
 	public:
-	explicit constexpr NumberColumn(unsigned int stringID, T MainWindow::TrainInfo:: *member, Source soap::TrainData:: *soapMember) :
+	explicit constexpr NumberColumn(unsigned int stringID, T MainWindow::TrainInfo:: *member, Source soap::TrainData:: *soapMember, unsigned int decimalPlaces) :
 		Column(stringID),
 		member(member),
-		soapMember(soapMember) {
+		soapMember(soapMember),
+		decimalPlaces(decimalPlaces) {
 	}
 
 	bool update(MainWindow::TrainInfo &dest, const soap::TrainData &source) const override {
@@ -253,7 +266,7 @@ class NumberColumn final : public Column {
 	}
 
 	const std::wstring &text(const MainWindow::TrainInfo &train, MainWindow::ScratchBuffers &scratch) const override {
-		formatNumber(train.*member, scratch);
+		formatNumber(train.*member, scratch, decimalPlaces);
 		return scratch.wstring;
 	}
 
@@ -269,16 +282,19 @@ class NumberColumn final : public Column {
 
 	// Which member of the SOAP update message holds the number.
 	Source soap::TrainData:: *soapMember;
+
+	// How many decimal places to show in this column.
+	unsigned int decimalPlaces;
 };
 
 // The train length column.
-constexpr const NumberColumn<uint32_t> lengthColumn(IDS_MAIN_COLUMN_LENGTH, &MainWindow::TrainInfo::length, &soap::TrainData::length);
+constexpr const NumberColumn<uint32_t> lengthColumn(IDS_MAIN_COLUMN_LENGTH, &MainWindow::TrainInfo::length, &soap::TrainData::length, 0);
 
 // The train weight column.
-constexpr const NumberColumn<uint32_t> weightColumn(IDS_MAIN_COLUMN_WEIGHT, &MainWindow::TrainInfo::weight, &soap::TrainData::weight);
+constexpr const NumberColumn<uint32_t> weightColumn(IDS_MAIN_COLUMN_WEIGHT, &MainWindow::TrainInfo::weight, &soap::TrainData::weight, 0);
 
 // The train speed column.
-constexpr const NumberColumn<int, float> speedColumn(IDS_MAIN_COLUMN_SPEED, &MainWindow::TrainInfo::speed, &soap::TrainData::speed);
+constexpr const NumberColumn<int, float> speedColumn(IDS_MAIN_COLUMN_SPEED, &MainWindow::TrainInfo::speed, &soap::TrainData::speed, 0);
 
 // The territory column.
 class TerritoryColumn final : public Column {
@@ -307,7 +323,7 @@ class TerritoryColumn final : public Column {
 				return *n;
 			} else {
 				// The territory does not have a known name. Render it as the integer instead.
-				formatNumber(*train.territory, scratch);
+				formatNumber(*train.territory, scratch, 0);
 				return scratch.wstring;
 			}
 		} else {
@@ -377,7 +393,7 @@ class LocationColumn final : public Column {
 				return *loc;
 			} else {
 				// We don't have a name for any location, current or historical. Show the raw block ID.
-				formatNumber(train.block, scratch);
+				formatNumber(train.block, scratch, 0);
 				return scratch.wstring;
 			}
 		} else {
