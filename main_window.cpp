@@ -518,28 +518,6 @@ MainWindow::MainWindow(HWND handle, MessagePump &pump, Connection connection) :
 	// Populate the View/Territories menu.
 	{
 		// Find the View/Territories menu. It doesn't have an ID because submenus can't have IDs, so we must search for it by knowing that it contains the Unknown item, which does have an ID.
-		auto findSubMenuContainingID = [](HMENU parent, unsigned int id) -> HMENU {
-			int count = GetMenuItemCount(parent);
-			if(count < 0) {
-				winrt::throw_last_error();
-			}
-			for(int i = 0; i != count; ++i) {
-				MENUITEMINFOW info{.cbSize = sizeof(info), .fMask = MIIM_SUBMENU};
-				winrt::check_bool(GetMenuItemInfoW(parent, i, TRUE, &info));
-				HMENU candidate = info.hSubMenu;
-				if(candidate) {
-					info.fMask = MIIM_STATE;
-					if(GetMenuItemInfoW(candidate, id, FALSE, &info)) {
-						return candidate;
-					} else if(GetLastError() == ERROR_MENU_ITEM_NOT_FOUND) {
-						// Go on to the next one; this is not a fatal error.
-					} else {
-						winrt::throw_last_error();
-					}
-				}
-			}
-			return nullptr;
-		};
 		HMENU viewMenu = winrt::check_pointer(findSubMenuContainingID(bar, ID_MAIN_MENU_VIEW_TERRITORIES_UNKNOWN));
 		HMENU territoriesMenu = winrt::check_pointer(findSubMenuContainingID(viewMenu, ID_MAIN_MENU_VIEW_TERRITORIES_UNKNOWN));
 
@@ -731,6 +709,29 @@ LRESULT MainWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lPara
 	}
 	return DefWindowProc(*this, message, wParam, lParam);
 }
+
+HMENU MainWindow::findSubMenuContainingID(HMENU parent, unsigned int id) {
+	int count = GetMenuItemCount(parent);
+	if(count < 0) {
+		winrt::throw_last_error();
+	}
+	for(int i = 0; i != count; ++i) {
+		MENUITEMINFOW info{.cbSize = sizeof(info), .fMask = MIIM_SUBMENU};
+		winrt::check_bool(GetMenuItemInfoW(parent, i, TRUE, &info));
+		HMENU candidate = info.hSubMenu;
+		if(candidate) {
+			info.fMask = MIIM_STATE;
+			if(GetMenuItemInfoW(candidate, id, FALSE, &info)) {
+				return candidate;
+			} else if(GetLastError() == ERROR_MENU_ITEM_NOT_FOUND) {
+				// Go on to the next one; this is not a fatal error.
+			} else {
+				winrt::throw_last_error();
+			}
+		}
+	}
+	return nullptr;
+};
 
 void MainWindow::handleClose() {
 	if(!closing) {

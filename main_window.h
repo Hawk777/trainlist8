@@ -97,6 +97,8 @@ class MainWindow final : public Window {
 	std::bitset<territory::count> enabledTerritories;
 	bool enabledUnknownTerritories;
 
+	static HMENU findSubMenuContainingID(HMENU parent, unsigned int id);
+
 	void handleClose();
 	static ListViewCompareCallback rawCompareCallback;
 	static int compareTrains(const TrainInfo &x, const TrainInfo &y, unsigned int column, int sortOrder);
