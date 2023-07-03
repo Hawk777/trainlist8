@@ -59,8 +59,8 @@ unsigned int getLocaleGrouping() {
 	return ui;
 }
 
-// Returns a number format suitable for formatting integers.
-NUMBERFMTW integerFormat() {
+// Returns a number format suitable for formatting numbers.
+NUMBERFMTW numberFormat() {
 	static std::wstring decimalSeparator = getLocaleString(LOCALE_SDECIMAL);
 	static std::wstring thousandsSeparator = getLocaleString(LOCALE_STHOUSAND);
 	static NUMBERFMTW ret = {
@@ -74,11 +74,11 @@ NUMBERFMTW integerFormat() {
 	return ret;
 }
 
-// Formats an integer according to the current locale into a buffer.
+// Formats a number according to the current locale into a buffer.
 //
 // The result is stored in the wstring field of the buffers parameter.
 template<std::integral T>
-void formatInteger(T value, MainWindow::ScratchBuffers &buffers) {
+void formatNumber(T value, MainWindow::ScratchBuffers &buffers) {
 	static constexpr size_t startBufferSize = std::numeric_limits<T>::digits10 + 3;
 
 	// Write the value, in locale-agnostic raw format, to buffers.string.
@@ -121,7 +121,7 @@ void formatInteger(T value, MainWindow::ScratchBuffers &buffers) {
 	}
 
 	// Add proper number formatting.
-	NUMBERFMTW fmt = integerFormat();
+	NUMBERFMTW fmt = numberFormat();
 	for(;;) {
 		// Optimistically try an initial conversion with a buffer.
 		// Once wstring2 settles to a stable allocation, this will succeed nearly all the time, so is faster.
@@ -235,11 +235,11 @@ class SymbolColumn final : public StringColumn {
 };
 constexpr const SymbolColumn SymbolColumn::instance;
 
-// Metadata about a list column that holds an integer value.
+// Metadata about a list column that holds a numeric value.
 template<std::integral T, typename Source = T>
-class IntegerColumn final : public Column {
+class NumberColumn final : public Column {
 	public:
-	explicit constexpr IntegerColumn(unsigned int stringID, T MainWindow::TrainInfo:: *member, Source soap::TrainData:: *soapMember) :
+	explicit constexpr NumberColumn(unsigned int stringID, T MainWindow::TrainInfo:: *member, Source soap::TrainData:: *soapMember) :
 		Column(stringID),
 		member(member),
 		soapMember(soapMember) {
@@ -253,7 +253,7 @@ class IntegerColumn final : public Column {
 	}
 
 	const std::wstring &text(const MainWindow::TrainInfo &train, MainWindow::ScratchBuffers &scratch) const override {
-		formatInteger(train.*member, scratch);
+		formatNumber(train.*member, scratch);
 		return scratch.wstring;
 	}
 
@@ -264,21 +264,21 @@ class IntegerColumn final : public Column {
 	}
 
 	private:
-	// Which member of the TrainInfo holds the integer.
+	// Which member of the TrainInfo holds the number.
 	T MainWindow::TrainInfo:: *member;
 
-	// Which member of the SOAP update message holds the integer.
+	// Which member of the SOAP update message holds the number.
 	Source soap::TrainData:: *soapMember;
 };
 
 // The train length column.
-constexpr const IntegerColumn<uint32_t> lengthColumn(IDS_MAIN_COLUMN_LENGTH, &MainWindow::TrainInfo::length, &soap::TrainData::length);
+constexpr const NumberColumn<uint32_t> lengthColumn(IDS_MAIN_COLUMN_LENGTH, &MainWindow::TrainInfo::length, &soap::TrainData::length);
 
 // The train weight column.
-constexpr const IntegerColumn<uint32_t> weightColumn(IDS_MAIN_COLUMN_WEIGHT, &MainWindow::TrainInfo::weight, &soap::TrainData::weight);
+constexpr const NumberColumn<uint32_t> weightColumn(IDS_MAIN_COLUMN_WEIGHT, &MainWindow::TrainInfo::weight, &soap::TrainData::weight);
 
 // The train speed column.
-constexpr const IntegerColumn<int, float> speedColumn(IDS_MAIN_COLUMN_SPEED, &MainWindow::TrainInfo::speed, &soap::TrainData::speed);
+constexpr const NumberColumn<int, float> speedColumn(IDS_MAIN_COLUMN_SPEED, &MainWindow::TrainInfo::speed, &soap::TrainData::speed);
 
 // The territory column.
 class TerritoryColumn final : public Column {
@@ -307,7 +307,7 @@ class TerritoryColumn final : public Column {
 				return *n;
 			} else {
 				// The territory does not have a known name. Render it as the integer instead.
-				formatInteger(*train.territory, scratch);
+				formatNumber(*train.territory, scratch);
 				return scratch.wstring;
 			}
 		} else {
@@ -377,7 +377,7 @@ class LocationColumn final : public Column {
 				return *loc;
 			} else {
 				// We don't have a name for any location, current or historical. Show the raw block ID.
-				formatInteger(train.block, scratch);
+				formatNumber(train.block, scratch);
 				return scratch.wstring;
 			}
 		} else {
