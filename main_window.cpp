@@ -60,7 +60,7 @@ unsigned int getLocaleGrouping() {
 }
 
 // Returns a number format suitable for formatting integers.
-const NUMBERFMTW &integerFormat() {
+NUMBERFMTW integerFormat() {
 	static std::wstring decimalSeparator = getLocaleString(LOCALE_SDECIMAL);
 	static std::wstring thousandsSeparator = getLocaleString(LOCALE_STHOUSAND);
 	static NUMBERFMTW ret = {
@@ -94,12 +94,13 @@ void formatInteger(T value, MainWindow::ScratchBuffers &buffers) {
 	wideBuffer[wideWritten] = '\0';
 
 	// Add proper number formatting.
-	int needed = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &integerFormat(), nullptr, 0);
+	NUMBERFMTW fmt = integerFormat();
+	int needed = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &fmt, nullptr, 0);
 	if(!needed) {
 		winrt::throw_last_error();
 	}
 	buffers.wstring.resize(needed);
-	int written = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &integerFormat(), buffers.wstring.data(), buffers.wstring.size());
+	int written = GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, wideBuffer.data(), &fmt, buffers.wstring.data(), buffers.wstring.size());
 	if(!written) {
 		winrt::throw_last_error();
 	}
