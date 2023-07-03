@@ -16,7 +16,7 @@ class WelcomeWindow final : public Window {
 	public:
 	static const wchar_t windowClass[];
 
-	explicit WelcomeWindow(HWND handle, MessagePump &pump);
+	explicit WelcomeWindow(HWND handle, MessagePump &pump, const wchar_t *connectTo);
 	~WelcomeWindow() = default;
 
 	protected:

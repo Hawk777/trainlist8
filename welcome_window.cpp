@@ -1,6 +1,9 @@
 #include "pch.h"
+#include <algorithm>
 #include <cassert>
+#include <cwctype>
 #include <string>
+#include <string_view>
 #include "error.h"
 #include "main_window.h"
 #include "resource.h"
@@ -12,7 +15,7 @@ using trainlist8::util::operator ""_as_xml;
 
 constinit const wchar_t WelcomeWindow::windowClass[] = L"welcome";
 
-WelcomeWindow::WelcomeWindow(HWND handle, MessagePump &pump) :
+WelcomeWindow::WelcomeWindow(HWND handle, MessagePump &pump, const wchar_t *connectTo) :
 	Window(handle, pump),
 	font(nullptr),
 	label(util::createWindowEx(0, WC_STATICW, util::loadString(instance(), IDS_WELCOME_LABEL).c_str(), SS_LEFT | SS_NOPREFIX | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, *this, nullptr, instance(), nullptr)),
@@ -26,10 +29,23 @@ WelcomeWindow::WelcomeWindow(HWND handle, MessagePump &pump) :
 	cancelling(false),
 	closePending(false),
 	quitOnDestroy(true) {
-	Button_SetCheck(localhostRadio, BST_CHECKED);
+	std::wstring_view connectToView(connectTo);
+	bool connectToEmpty = std::ranges::all_of(connectToView, [](wchar_t i) { return std::iswspace(static_cast<std::wint_t>(i)); });
+	if(connectToEmpty) {
+		// No address to connect to was provided, so let the user choose.
+		Button_SetCheck(localhostRadio, BST_CHECKED);
+	} else {
+		// An address to connect to was provided, so prepopulate it.
+		Button_SetCheck(otherComputerRadio, BST_CHECKED);
+		SetWindowText(hostnameEdit, connectTo);
+	}
 	updateIcon();
 	updateLayoutAndFont();
 	updateControlsEnabled();
+	if(!connectToEmpty) {
+		// Try initiating a connection attempt immediately.
+		PostMessage(handle, WM_COMMAND, MAKEWPARAM(IDOK, BN_CLICKED), reinterpret_cast<LPARAM>(connectButton));
+	}
 }
 
 LRESULT WelcomeWindow::windowProc(unsigned int message, WPARAM wParam, LPARAM lParam) {
@@ -112,8 +128,8 @@ void WelcomeWindow::updateLayoutAndFont() {
 	winrt::check_bool(GetClientRect(*this, &clientRect));
 	int clientWidth = clientRect.right - clientRect.left;
 	int y = margin;
-	MoveWindow(label, margin, y, clientWidth - 2 * margin, rowHeight, TRUE);
-	y += rowHeight + margin;
+	MoveWindow(label, margin, y, clientWidth - 2 * margin, rowHeight * 2, TRUE);
+	y += rowHeight * 2 + margin;
 	MoveWindow(localhostRadio, margin, y, clientWidth - 2 * margin, rowHeight, TRUE);
 	y += rowHeight + margin;
 	MoveWindow(otherComputerRadio, margin, y, clientWidth - 2 * margin, rowHeight, TRUE);

@@ -146,7 +146,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_WELCOME_LABEL       "Which computer is Run 8 running on?"
+    IDS_WELCOME_LABEL       "Which computer is Run 8 running on?\n(you can also pass the name or address on the command line)"
     IDS_WELCOME_LOCALHOST   "This computer"
     IDS_WELCOME_OTHER_COMPUTER "Other computer:"
     IDS_WELCOME_CONNECT     "Connect"

@@ -8,7 +8,7 @@
 #include "util.h"
 #include "welcome_window.h"
 
-int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, wchar_t *, int showCommand) {
+int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, wchar_t *commandLine, int showCommand) {
 	// Set up locale.
 	std::locale::global(std::locale());
 
@@ -79,7 +79,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, wchar_t *, int showCommand) {
 	trainlist8::MessagePump pump;
 
 	// Create welcome window.
-	HWND welcomeHandle = trainlist8::Window::create(WS_EX_WINDOWEDGE, trainlist8::WelcomeWindow::windowClass, trainlist8::util::loadString(instance, IDS_APP_NAME).c_str(), WS_CAPTION | WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU, CW_USEDEFAULT, 0, 500, 260, nullptr, nullptr, instance, [&pump](HWND handle) { return new trainlist8::WelcomeWindow(handle, pump); });
+	HWND welcomeHandle = trainlist8::Window::create(WS_EX_WINDOWEDGE, trainlist8::WelcomeWindow::windowClass, trainlist8::util::loadString(instance, IDS_APP_NAME).c_str(), WS_CAPTION | WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU, CW_USEDEFAULT, 0, 500, 285, nullptr, nullptr, instance, [&pump, commandLine](HWND handle) { return new trainlist8::WelcomeWindow(handle, pump, commandLine); });
 	winrt::check_bool(ShowWindowAsync(welcomeHandle, showCommand));
 
 	// Run message pump.
